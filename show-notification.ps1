@@ -100,7 +100,7 @@ $xaml = @"
         <!-- Big rainbow unicorn background, bleeding to the card edges (rounded clip
              on the card keeps it from spilling onto the rim).
              VerticalAlignment must stay Stretch: a Rectangle with no Height collapses otherwise. -->
-        <Rectangle Panel.ZIndex="0" Width="210" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0" Opacity="0.92">
+        <Rectangle x:Name="unicorn" Panel.ZIndex="0" Width="210" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0" Opacity="0.92">
           <Rectangle.Fill>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
               <GradientStop Color="#FF5F6D" Offset="0"/><GradientStop Color="#FFC371" Offset="0.28"/>
@@ -120,9 +120,13 @@ $xaml = @"
         <!-- Content layer, always above the unicorn -->
         <StackPanel Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="26,0,0,0">
           <StackPanel Orientation="Horizontal">
-            <TextBlock x:Name="logo" FontFamily="Cascadia Mono, Consolas, Courier New" FontSize="16"
-                       Foreground="#D97757" LineHeight="16" LineStackingStrategy="BlockLineHeight"
-                       Width="104" TextAlignment="Left" VerticalAlignment="Center"/>
+            <Grid VerticalAlignment="Center">
+              <TextBlock x:Name="logo" FontFamily="Cascadia Mono, Consolas, Courier New" FontSize="16"
+                         Foreground="#D97757" LineHeight="16" LineStackingStrategy="BlockLineHeight"
+                         TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <Image x:Name="mascot" Height="108" Stretch="Uniform" Visibility="Collapsed"
+                     RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Grid>
             <TextBlock x:Name="status" FontSize="34" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"/>
             <Grid Margin="14,0,0,0" Width="64" Height="64" VerticalAlignment="Center">$indicator</Grid>
           </StackPanel>
@@ -181,6 +185,32 @@ function Start-Fireworks($canvas) {
   }
 }
 
+# Play the "done" mascot as a frame-by-frame flipbook from PNGs in mascots\done.
+# Returns $true if it started, $false if no frames were found (caller can fall back).
+function Start-Mascot($win, $folder) {
+  $dir = Join-Path $PSScriptRoot ('mascots\' + $folder)
+  if (-not (Test-Path $dir)) { return $false }
+  $files = @(Get-ChildItem -Path $dir -Filter 'frame_*.png' -ErrorAction SilentlyContinue | Sort-Object Name)
+  if ($files.Count -eq 0) { return $false }
+  $script:mFrames = foreach ($f in $files) {
+    $bi = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bi.BeginInit()
+    $bi.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+    $bi.UriSource = New-Object System.Uri($f.FullName)
+    $bi.EndInit(); $bi.Freeze(); $bi
+  }
+  $script:mImg = $win.FindName('mascot')
+  $win.FindName('logo').Visibility = [System.Windows.Visibility]::Collapsed
+  $script:mImg.Source = $script:mFrames[0]
+  $script:mImg.Visibility = [System.Windows.Visibility]::Visible
+  $script:mIdx = 0
+  $mt = New-Object System.Windows.Threading.DispatcherTimer
+  $mt.Interval = [TimeSpan]::FromMilliseconds(33)   # ~30fps, matches the source video
+  $mt.Add_Tick({ $script:mIdx = ($script:mIdx + 1) % $script:mFrames.Count; $script:mImg.Source = $script:mFrames[$script:mIdx] })
+  $mt.Start()
+  return $true
+}
+
 # --- Position on the target monitor (DPI-correct), fade in, kick off fireworks ---
 $win.Add_Loaded({
   # Round-clip the card so edge-bleeding content follows the corner radius (a Border
@@ -200,7 +230,11 @@ $win.Add_Loaded({
   $win.Top  = ($wa.Bottom - $hpx - $pad) / $sy
   $fade = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 1, ([System.Windows.Duration][TimeSpan]::FromMilliseconds(250))
   $win.BeginAnimation([System.Windows.Window]::OpacityProperty, $fade)
-  if ($Event -eq 'done') { Start-Fireworks ($win.FindName('fx')) }
+  # Per-event mascot: done celebrates with confetti, needs-input waves a flag.
+  $mascotFolder = @{ 'done' = 'confetti'; 'needs-input' = 'flag' }[$Event]
+  if ($mascotFolder) {
+    if (-not (Start-Mascot $win $mascotFolder)) { if ($Event -eq 'done') { Start-Fireworks ($win.FindName('fx')) } }
+  }
 
   # Continuously rotate the rainbow rim so the colours travel around the border.
   $rimBrush = $win.FindName('rimBrush')
