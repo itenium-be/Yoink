@@ -166,7 +166,7 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     shootingStar = [bool](Get-Prop $theme.scene 'shootingStar')
     embers       = [bool](Coalesce (Get-Prop $theme.scene 'embers') $true)
     glow         = [bool](Get-Prop $theme.scene 'glow')
-    flames       = [bool](Get-Prop $theme.scene 'flames')
+    bottom       = [string](Coalesce (Get-Prop $theme.scene 'bottom') 'lava')
     smoke        = [bool](Get-Prop $theme.scene 'smoke')
   }
 }

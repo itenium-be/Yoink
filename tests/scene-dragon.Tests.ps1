@@ -8,27 +8,31 @@ function Assert-Eq($got, $exp, $msg) {
 }
 function Assert-True($cond, $msg) { Assert-Eq ([bool]$cond) $true $msg }
 
-# --- New-FlamePathData: one flame tongue as XAML geometry ---
-$d = New-FlamePathData 13 20
+# A closed XAML path with invariant (space-separated, '.') coordinates that WPF parses,
+# also under the nl-BE comma-decimal machine locale.
+function Assert-Geometry($fn, $msg) {
+  $d = & $fn
+  Assert-True ($d.StartsWith('M')) "$msg starts with M"
+  Assert-True ($d.TrimEnd().EndsWith('Z')) "$msg closed with Z"
+  Assert-True (-not $d.Contains(',')) "$msg no ',' (space-separated, invariant decimals)"
+  Assert-True ($d.Contains('.')) "$msg uses '.' decimal"
+  $p = $null; try { $p = [System.Windows.Media.Geometry]::Parse($d) } catch { }
+  Assert-True ($null -ne $p) "$msg Geometry.Parse accepts it"
+  $prev = [System.Threading.Thread]::CurrentThread.CurrentCulture
+  try {
+    [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('nl-BE')
+    $dc = & $fn
+    Assert-True (-not $dc.Contains(',')) "$msg nl-BE: still no ',' decimal"
+    $pc = $null; try { $pc = [System.Windows.Media.Geometry]::Parse($dc) } catch { }
+    Assert-True ($null -ne $pc) "$msg nl-BE: still parses"
+  } finally { [System.Threading.Thread]::CurrentThread.CurrentCulture = $prev }
+}
 
-Assert-True ($d.StartsWith('M')) "flame path starts with M (moveto)"
-Assert-True ($d.TrimEnd().EndsWith('Z')) "flame path is closed with Z"
-# Coordinates are space-separated, so any ',' would be a comma-decimal locale leak.
-Assert-True (-not $d.Contains(',')) "no ',' (space-separated coords, invariant decimals)"
-Assert-True ($d.Contains('.')) "uses '.' decimal separator"
-$parsed = $null
-try { $parsed = [System.Windows.Media.Geometry]::Parse($d) } catch { }
-Assert-True ($null -ne $parsed) "Geometry.Parse accepts the flame path"
+# --- New-GemPathData: a faceted gem outline (table top, pointed pavilion) ---
+Assert-Geometry { New-GemPathData 12 10 } "gem"
 
-# Under a comma-decimal culture (machine is nl-BE) it must still emit '.' and parse.
-$prev = [System.Threading.Thread]::CurrentThread.CurrentCulture
-try {
-  [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('nl-BE')
-  $dc = New-FlamePathData 13 20
-  Assert-True (-not $dc.Contains(',')) "nl-BE: still no ',' decimal"
-  $pc = $null; try { $pc = [System.Windows.Media.Geometry]::Parse($dc) } catch { }
-  Assert-True ($null -ne $pc) "nl-BE: Geometry.Parse still accepts the flame path"
-} finally { [System.Threading.Thread]::CurrentThread.CurrentCulture = $prev }
+# --- New-GlintPathData: a 4-point sparkle star ---
+Assert-Geometry { New-GlintPathData 10 } "glint"
 
 # --- New-DragonStop: bakes a 0..1 alpha into an #AARRGGBB gradient stop ---
 $s = New-DragonStop '#F97316' 0.5 0.25
