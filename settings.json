@@ -1,4 +1,5 @@
 {
+  "$schema": "https://itenium-be.github.io/Yoink/settings.schema.json",
   "activeTheme": "random",
   "play-sound-when-terminal-is-active": true,
   "events": {

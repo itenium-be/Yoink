@@ -1,0 +1,14 @@
+{
+  // settings.json carries // comments, stripped by PowerShell at load — treat as JSONC so the editor doesn't flag them.
+  "files.associations": {
+    "settings.json": "jsonc",
+    "yoink.json": "jsonc"
+  },
+  // Offline/local schema binding for in-repo edits; the published $schema URL covers copies elsewhere.
+  "json.schemas": [
+    {
+      "fileMatch": ["settings.json", "yoink.json"],
+      "url": "./settings.schema.json"
+    }
+  ]
+}
