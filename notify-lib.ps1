@@ -92,12 +92,16 @@ function Resolve-Event($cfg, [string]$event) {
   $defs = (Get-NotifyDefaults).events
   $def = $defs[$event]; if ($null -eq $def) { $def = $defs['done'] }
   $e = Get-Prop (Get-Prop $cfg 'events') $event
+  # indicator / sound: an explicit "" is honored as-is (no badge / no sound); only a
+  # MISSING key (null) falls back to the default. (Coalesce can't tell "" from absent.)
+  $ind = Get-Prop $e 'indicator'; if ($null -eq $ind) { $ind = $def.indicator }
+  $snd = Get-Prop $e 'sound';     if ($null -eq $snd) { $snd = $def.sound }
   @{
     label     = (Coalesce (Get-Prop $e 'label')     $def.label)
     accent    = (Coalesce (Get-Prop $e 'accent')    $def.accent)
-    indicator = (Coalesce (Get-Prop $e 'indicator') $def.indicator)
+    indicator = [string]$ind
     mascot    = (Coalesce (Get-Prop $e 'mascot')    $def.mascot)
-    sound     = (Coalesce (Get-Prop $e 'sound')     $def.sound)
+    sound     = [string]$snd
     body      = @(Coalesce (Get-Prop $e 'body')      $def.body)
   }
 }

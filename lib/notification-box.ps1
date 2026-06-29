@@ -44,11 +44,15 @@ function New-NotificationBox {
   $heroStops  = New-GradientStops $Theme.gradient
   $rimStops   = New-GradientStops $Theme.rim
 
-  if ($Ev.indicator -eq 'fireworks') {
-    $indicator = '<Canvas x:Name="fx" Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center"/>'
+  # An empty indicator means "no badge": emit no element at all (the 64px slot
+  # vanishes too). Otherwise: 'fireworks' -> particle canvas, any emoji -> waving badge.
+  if ([string]::IsNullOrWhiteSpace([string]$Ev.indicator)) {
+    $indicatorBlock = ''
+  } elseif ($Ev.indicator -eq 'fireworks') {
+    $indicatorBlock = '<Grid Width="64" Height="64" Margin="14,0,0,0" VerticalAlignment="Center"><Canvas x:Name="fx" Width="64" Height="64" HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid>'
   } else {
-    $indicator = @"
-<Rectangle Width="58" Height="58" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.85">
+    $indicatorBlock = @"
+<Grid Width="64" Height="64" Margin="14,0,0,0" VerticalAlignment="Center"><Rectangle Width="58" Height="58" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.85">
   <Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="1,1">$heroStops</LinearGradientBrush></Rectangle.Fill>
   <Rectangle.OpacityMask>
     <VisualBrush Stretch="Uniform"><VisualBrush.Visual>
@@ -63,7 +67,7 @@ function New-NotificationBox {
       </Storyboard></BeginStoryboard>
     </EventTrigger>
   </Rectangle.Triggers>
-</Rectangle>
+</Rectangle></Grid>
 "@
   }
 
@@ -105,7 +109,7 @@ function New-NotificationBox {
               <!-- Empty spacer: reserves the mascot's resting spot during the looking phase. -->
               <Grid x:Name="slot" Width="128" Height="110" VerticalAlignment="Center"/>
               <TextBlock x:Name="status" FontSize="34" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"/>
-              <Grid Width="64" Height="64" Margin="14,0,0,0" VerticalAlignment="Center">$indicator</Grid>
+              $indicatorBlock
             </StackPanel>
             <StackPanel x:Name="bodyPanel" Margin="2,10,0,0"/>
           </StackPanel>

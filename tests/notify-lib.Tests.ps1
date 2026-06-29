@@ -34,9 +34,27 @@ Assert-Eq (New-GradientStops @('bad','#0000FF 0.5')) `
   "gradient skips unparseable stop"
 Assert-Eq (New-GradientStops @('#123456')) '' "stop without offset skipped"
 
-# --- Get-NotifyConfig / resolution (uses repo settings.json one dir up) ---
-$cfg = Get-NotifyConfig (Join-Path $PSScriptRoot '..')
-Assert-Eq (Resolve-ThemeName $cfg) 'unicorn' "active theme name from settings.json"
+# --- Resolution (inline fixture). The SHIPPED settings.json is validated structurally
+# by tests/settings.Tests.sh; resolving against a fixture keeps these green no matter
+# how a user edits their own settings.json. ---
+$cfg = [pscustomobject]@{
+  activeTheme = 'unicorn'
+  themes = [pscustomobject]@{
+    unicorn = [pscustomobject]@{ hero = '🦄'; gradient = @('#FF5F6D 0', '#A56BFF 1'); rim = @('#7C3AED 0', '#EC4899 1'); card = '#18181B' }
+    ocean   = [pscustomobject]@{ hero = '🐳'; gradient = @('#0EA5E9 0', '#0891B2 1'); rim = @('#0C4A6E 0', '#14B8A6 1'); card = '#0A1620' }
+  }
+  events = [pscustomobject]@{
+    'needs-input' = [pscustomobject]@{
+      label = 'Needs you'; accent = '#FF7A18'; indicator = '👋'; mascot = 'flag'; sound = 'exclamation'
+      body = @(
+        [pscustomobject]@{ text = '{{message}}'; style = 'headline' },
+        [pscustomobject]@{ text = '{{folder}} · {{branch}}'; style = 'sub' },
+        [pscustomobject]@{ text = '{{last_prompt}}'; style = 'muted' }
+      )
+    }
+  }
+}
+Assert-Eq (Resolve-ThemeName $cfg) 'unicorn' "active theme name from config"
 
 $theme = Resolve-Theme $cfg 'ocean'
 Assert-Eq $theme.hero '🐳' "resolve named theme hero"
@@ -90,5 +108,15 @@ Assert-Eq $cols.Count 3 "stop colors count"
 Assert-Eq $cols[0] '#FF0000' "first stop color"
 Assert-Eq $cols[2] '#0000FF' "last stop color"
 Assert-Eq (@(Get-StopColors @('bad','#123456 0.4')).Count) 1 "unparseable stop skipped"
+
+# --- indicator / sound: explicit "" honored (no badge / silent); MISSING key -> default ---
+$cfgEmptyInd = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ indicator = '' } } }
+Assert-Eq (Resolve-Event $cfgEmptyInd 'needs-input').indicator '' "explicit empty indicator honored"
+$cfgNoInd = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ label = 'X' } } }
+Assert-Eq (Resolve-Event $cfgNoInd 'needs-input').indicator '👋' "missing indicator falls back to default"
+$cfgEmptySnd = [pscustomobject]@{ events = [pscustomobject]@{ 'done' = [pscustomobject]@{ sound = '' } } }
+Assert-Eq (Resolve-Event $cfgEmptySnd 'done').sound '' "explicit empty sound honored"
+$cfgNoSnd = [pscustomobject]@{ events = [pscustomobject]@{ 'done' = [pscustomobject]@{ label = 'Y' } } }
+Assert-Eq (Resolve-Event $cfgNoSnd 'done').sound 'asterisk' "missing sound falls back to default"
 
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }
