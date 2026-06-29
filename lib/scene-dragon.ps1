@@ -219,34 +219,36 @@ function New-SceneStopLocal([string]$hex, [double]$offset) {
   New-Object System.Windows.Media.GradientStop ([System.Windows.Media.ColorConverter]::ConvertFromString($hex)), $offset
 }
 
-# A dragon's hoard piled along the bottom: a warm under-glow, a mound of overlapping
-# gold coins, a few coloured gems, and twinkling glints. Static pile; only the glints
-# animate (scale twinkle — the reliable repaint path for scene children).
+# A dragon's hoard that completely fills the bottom of the card: a solid gold bed
+# (so no card shows through), densely tiled overlapping coins for texture, a crest of
+# coins poking above the surface, coloured gems and twinkling glints. Static pile;
+# only the glints animate (scale twinkle — the reliable repaint path here).
 function Add-DragonTreasure($canvas, [double]$w, [double]$h, [double]$speed) {
-  $maxH = $h * 0.40
+  $pileH = $h * 0.46
+  $pileTop = $h - $pileH
 
-  # Warm gold under-glow behind the pile.
-  $glow = New-Object System.Windows.Shapes.Ellipse
-  $glow.Width = $w * 1.1; $glow.Height = $maxH * 2.4
-  $gg = New-Object System.Windows.Media.RadialGradientBrush
-  $gg.GradientStops.Add((New-DragonStop '#F5C542' 0.30 0.0))
-  $gg.GradientStops.Add((New-DragonStop '#F5C542' 0.10 0.55))
-  $gg.GradientStops.Add((New-DragonStop '#F5C542' 0.0 1.0))
-  $glow.Fill = $gg
-  [System.Windows.Controls.Canvas]::SetLeft($glow, -$w * 0.05); [System.Windows.Controls.Canvas]::SetTop($glow, $h - $maxH * 1.5)
-  $canvas.Children.Add($glow) | Out-Null
+  # Solid gold bed across the full width: guarantees the bottom is completely filled.
+  $bed = New-Object System.Windows.Shapes.Rectangle
+  $bed.Width = $w; $bed.Height = $pileH + 2
+  $bg = New-Object System.Windows.Media.LinearGradientBrush
+  $bg.StartPoint = '0,0'; $bg.EndPoint = '0,1'
+  $bg.GradientStops.Add((New-SceneStopLocal '#FFE9A8' 0.0))
+  $bg.GradientStops.Add((New-SceneStopLocal '#F5C542' 0.45))
+  $bg.GradientStops.Add((New-SceneStopLocal '#C8901A' 1.0))
+  $bed.Fill = $bg
+  [System.Windows.Controls.Canvas]::SetLeft($bed, 0); [System.Windows.Controls.Canvas]::SetTop($bed, $pileTop)
+  $canvas.Children.Add($bed) | Out-Null
 
-  # Pile of coins. Height follows a centred parabola so it mounds in the middle. Draw
-  # back-to-front (higher coins first) so lower coins overlap on top.
+  # Dense coin tiling over the whole bed (crest poking a little above the surface).
+  # Draw back-to-front (top rows first) so lower coins overlap on top.
   $coins = @()
-  $nCoins = [int]($w / 11)
-  for ($i = 0; $i -lt $nCoins; $i++) {
-    $x = (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * $w
-    $nx = ($x - $w / 2) / ($w / 2)
-    $localTop = $h - $maxH * (1 - $nx * $nx) * (0.55 + (Get-Random -Minimum 0 -Maximum 45) / 100.0)
-    $y = $localTop + (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * ($h - $localTop)
-    $d = 12 + (Get-Random -Minimum 0 -Maximum 10)
-    $coins += @{ x = $x; y = $y; d = $d }
+  for ($y = $pileTop - 6; $y -lt $h; $y += 12) {
+    for ($x = -8; $x -lt ($w + 8); $x += 15) {
+      $d = 13 + (Get-Random -Minimum 0 -Maximum 10)
+      $jx = $x + (Get-Random -Minimum -5 -Maximum 5)
+      $jy = $y + (Get-Random -Minimum -4 -Maximum 4)
+      $coins += @{ x = $jx; y = $jy; d = $d }
+    }
   }
   foreach ($c in ($coins | Sort-Object { $_.y })) {
     $coin = New-CoinVisual $c.d
@@ -254,10 +256,10 @@ function Add-DragonTreasure($canvas, [double]$w, [double]$h, [double]$speed) {
     $canvas.Children.Add($coin) | Out-Null
   }
 
-  # A few coloured gems resting on the mound.
-  $gemCols = @('#E0115F', '#10B981', '#2563EB', '#9333EA', '#22D3EE')
-  for ($i = 0; $i -lt 5; $i++) {
-    $gw = 12 + (Get-Random -Minimum 0 -Maximum 8); $gh = $gw * 0.95
+  # Coloured gems resting across the surface.
+  $gemCols = @('#E0115F', '#10B981', '#2563EB', '#9333EA', '#22D3EE', '#F43F5E', '#34D399')
+  for ($i = 0; $i -lt 7; $i++) {
+    $gw = 13 + (Get-Random -Minimum 0 -Maximum 9); $gh = $gw * 0.95
     $col = $gemCols[$i % $gemCols.Count]
     $p = New-Object System.Windows.Shapes.Path
     $p.Data = [System.Windows.Media.Geometry]::Parse((New-GemPathData $gw $gh))
@@ -268,21 +270,21 @@ function Add-DragonTreasure($canvas, [double]$w, [double]$h, [double]$speed) {
     $rg.GradientStops.Add((New-SceneStopLocal $col 1.0))
     $p.Fill = $rg
     $p.Stroke = New-Brush '#FFFFFF'; $p.StrokeThickness = 0.5
-    $gx = ($i + 0.5) / 5 * $w + (Get-Random -Minimum -20 -Maximum 20)
-    $gy = $h - $maxH * (0.3 + (Get-Random -Minimum 0 -Maximum 45) / 100.0)
+    $gx = ($i + 0.5) / 7 * $w + (Get-Random -Minimum -22 -Maximum 22)
+    $gy = $pileTop + (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * ($pileH * 0.5)
     [System.Windows.Controls.Canvas]::SetLeft($p, $gx); [System.Windows.Controls.Canvas]::SetTop($p, $gy)
     $canvas.Children.Add($p) | Out-Null
   }
 
-  # Twinkling glints scattered over the hoard.
-  $nGlint = 9
+  # Twinkling glints scattered across the hoard.
+  $nGlint = 14
   for ($i = 0; $i -lt $nGlint; $i++) {
     $s = 6 + (Get-Random -Minimum 0 -Maximum 8)
     $p = New-Object System.Windows.Shapes.Path
     $p.Data = [System.Windows.Media.Geometry]::Parse((New-GlintPathData $s))
     $p.Fill = New-Brush '#FFFDE7'
     $gx = (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * $w
-    $gy = $h - (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * $maxH
+    $gy = $pileTop + (Get-Random -Minimum 0 -Maximum 1000) / 1000.0 * $pileH
     [System.Windows.Controls.Canvas]::SetLeft($p, $gx); [System.Windows.Controls.Canvas]::SetTop($p, $gy)
     $sc = New-Object System.Windows.Media.ScaleTransform 0.3, 0.3
     $sc.CenterX = $s / 2; $sc.CenterY = $s / 2
@@ -293,6 +295,90 @@ function Add-DragonTreasure($canvas, [double]$w, [double]$h, [double]$speed) {
     $tw.AutoReverse = $true; $tw.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
     $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleXProperty, $tw)
     $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleYProperty, $tw)
+  }
+}
+
+# Glowing coal bed: a dark mound of rounded coals along the bottom, each with a hot
+# core that breathes (ScaleTransform pulse — opacity animation is unreliable here).
+function Add-DragonCoals($canvas, [double]$w, [double]$h, [double]$speed) {
+  $bedTop = $h * 0.78
+  $bed = New-Object System.Windows.Shapes.Rectangle
+  $bed.Width = $w; $bed.Height = $h - $bedTop + 2
+  $bg = New-Object System.Windows.Media.LinearGradientBrush
+  $bg.StartPoint = '0,0'; $bg.EndPoint = '0,1'
+  $bg.GradientStops.Add((New-SceneStopLocal '#2A1A12' 0.0))
+  $bg.GradientStops.Add((New-SceneStopLocal '#1A0F0A' 1.0))
+  $bed.Fill = $bg
+  [System.Windows.Controls.Canvas]::SetLeft($bed, 0); [System.Windows.Controls.Canvas]::SetTop($bed, $bedTop)
+  $canvas.Children.Add($bed) | Out-Null
+
+  for ($row = 0; $row -lt 2; $row++) {
+    $cy = $bedTop + $row * ($h - $bedTop) * 0.45
+    for ($x = -10; $x -lt ($w + 10); $x += 24) {
+      $cw = 22 + (Get-Random -Minimum 0 -Maximum 18)
+      $jx = $x + (Get-Random -Minimum -6 -Maximum 6)
+      $jy = $cy + (Get-Random -Minimum -4 -Maximum 6)
+      $coal = New-Object System.Windows.Shapes.Ellipse
+      $coal.Width = $cw; $coal.Height = $cw * 0.6
+      $coal.Fill = New-Brush '#1A0F0A'
+      [System.Windows.Controls.Canvas]::SetLeft($coal, $jx); [System.Windows.Controls.Canvas]::SetTop($coal, $jy)
+      $canvas.Children.Add($coal) | Out-Null
+      # Hot glowing core.
+      $core = New-Object System.Windows.Shapes.Ellipse
+      $cr = $cw * 0.7
+      $core.Width = $cr; $core.Height = $cr * 0.6
+      $rg = New-Object System.Windows.Media.RadialGradientBrush
+      $rg.GradientStops.Add((New-DragonStop '#FDE047' 0.85 0.0))
+      $rg.GradientStops.Add((New-DragonStop '#F97316' 0.55 0.45))
+      $rg.GradientStops.Add((New-DragonStop '#DC2626' 0.0 1.0))
+      $core.Fill = $rg
+      [System.Windows.Controls.Canvas]::SetLeft($core, $jx + ($cw - $cr) / 2); [System.Windows.Controls.Canvas]::SetTop($core, $jy + ($cw * 0.6 - $cr * 0.6) / 2)
+      $sc = New-Object System.Windows.Media.ScaleTransform 1, 1
+      $sc.CenterX = $cr / 2; $sc.CenterY = $cr * 0.3
+      $core.RenderTransform = $sc
+      $canvas.Children.Add($core) | Out-Null
+      $pdur = (1.3 + (Get-Random -Minimum 0 -Maximum 22) / 10.0) / $speed
+      $pulse = New-Object System.Windows.Media.Animation.DoubleAnimation 0.45, 1.15, ([System.Windows.Duration][TimeSpan]::FromSeconds($pdur))
+      $pulse.AutoReverse = $true; $pulse.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+      $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleXProperty, $pulse)
+      $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleYProperty, $pulse)
+    }
+  }
+}
+
+# Heat shimmer: faint warm vertical hazes near the bottom that waver sideways and
+# breathe, suggesting rising hot air without a structured flame shape. All motion via
+# RenderTransform (X sway + ScaleY breathe).
+function Add-DragonShimmer($canvas, [double]$w, [double]$h, [double]$speed) {
+  $n = 7
+  $bandH = $h * 0.5
+  for ($i = 0; $i -lt $n; $i++) {
+    $cw = $w * (0.10 + (Get-Random -Minimum 0 -Maximum 8) / 100.0)
+    $r = New-Object System.Windows.Shapes.Rectangle
+    $r.Width = $cw; $r.Height = $bandH
+    $g = New-Object System.Windows.Media.LinearGradientBrush
+    $g.StartPoint = '0,0'; $g.EndPoint = '0,1'
+    $g.GradientStops.Add((New-DragonStop '#F97316' 0.0 0.0))
+    $g.GradientStops.Add((New-DragonStop '#F97316' 0.10 0.6))
+    $g.GradientStops.Add((New-DragonStop '#FDBA74' 0.18 1.0))
+    $r.Fill = $g
+    $x = ($i + 0.5) / $n * $w - $cw / 2
+    [System.Windows.Controls.Canvas]::SetLeft($r, $x); [System.Windows.Controls.Canvas]::SetTop($r, $h - $bandH)
+    $sc = New-Object System.Windows.Media.ScaleTransform 1, 1
+    $sc.CenterX = $cw / 2; $sc.CenterY = $bandH
+    $tt = New-Object System.Windows.Media.TranslateTransform
+    $grp = New-Object System.Windows.Media.TransformGroup
+    $grp.Children.Add($sc); $grp.Children.Add($tt)
+    $r.RenderTransform = $grp
+    $canvas.Children.Add($r) | Out-Null
+    $sdur = (2.0 + (Get-Random -Minimum 0 -Maximum 20) / 10.0) / $speed
+    $amp = 6 + (Get-Random -Minimum 0 -Maximum 8)
+    $sway = New-Object System.Windows.Media.Animation.DoubleAnimation (-$amp), $amp, ([System.Windows.Duration][TimeSpan]::FromSeconds($sdur))
+    $sway.AutoReverse = $true; $sway.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::XProperty, $sway)
+    $br = New-Object System.Windows.Media.Animation.DoubleAnimation 0.85, 1.15, ([System.Windows.Duration][TimeSpan]::FromSeconds($sdur * 1.3))
+    $br.AutoReverse = $true; $br.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleYProperty, $br)
   }
 }
 
@@ -329,8 +415,8 @@ function Add-DragonSmoke($canvas, [double]$w, [double]$h, [double]$speed) {
 }
 
 # Render the dragon scene into $box.Scene. $cfg: embers (default on) / count / speed /
-# glow / smoke; bottom = 'lava' | 'treasure' | 'none' (mutually-exclusive bottom layer,
-# default 'lava'). Back (glow) to front (embers) draw order.
+# glow / smoke; bottom = 'lava' | 'treasure' | 'coals' | 'shimmer' | 'none'
+# (mutually-exclusive bottom layer, default 'lava'). Back (glow) to front (embers).
 function Start-Dragon($box, $cfg) {
   $canvas = $box.Scene
   if ($null -eq $canvas) { return }
@@ -344,8 +430,12 @@ function Start-Dragon($box, $cfg) {
   $bottom = [string]$cfg.bottom; if (-not $bottom) { $bottom = 'lava' }
 
   if ($cfg.glow)   { Add-DragonGlow $canvas $w $h $speed }
-  if ($bottom -eq 'lava')     { Add-DragonLava     $canvas $w $h $speed }
-  elseif ($bottom -eq 'treasure') { Add-DragonTreasure $canvas $w $h $speed }
+  switch ($bottom) {
+    'lava'     { Add-DragonLava     $canvas $w $h $speed }
+    'treasure' { Add-DragonTreasure $canvas $w $h $speed }
+    'coals'    { Add-DragonCoals    $canvas $w $h $speed }
+    'shimmer'  { Add-DragonShimmer  $canvas $w $h $speed }
+  }
   if ($cfg.smoke)  { Add-DragonSmoke  $canvas $w $h $speed }
   if ($cfg.embers) { Add-DragonEmbers $canvas $w $h $count $speed }
 }
