@@ -112,9 +112,9 @@ function Add-SpookyFog($canvas, [double]$w, [double]$h, [double]$opacity, [doubl
   }
 }
 
-# Static silhouette of tilted gravestones along the bottom edge (dark rounded rects).
+# Static silhouette of tilted gravestones along the bottom edge (gravestone-grey rounded rects).
 function Add-SpookyGravestones($canvas, [double]$w, [double]$h) {
-  $fill = New-Brush '#CC0A0710'
+  $fill = New-Brush '#CC8A8F99'
   $n = 5
   for ($i = 0; $i -lt $n; $i++) {
     $gw = $w * (0.06 + ($i % 2) * 0.02)
