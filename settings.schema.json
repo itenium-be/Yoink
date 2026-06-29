@@ -170,7 +170,7 @@
       "required": ["kind"],
       "description": "Optional animated backdrop for the theme.",
       "properties": {
-        "kind": { "enum": ["waves", "space", "matrix", "sakura", "unicorn"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain), \"sakura\" (cherry-blossom petals) or \"unicorn\" (rainbow / aurora / glitter / pastel)." },
+        "kind": { "enum": ["waves", "space", "matrix", "sakura", "unicorn", "spooky"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain), \"sakura\" (cherry-blossom petals), \"unicorn\" (rainbow / aurora / glitter / pastel) or \"spooky\" (Halloween / haunted)." },
         "colors": {
           "type": "array",
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
@@ -196,7 +196,15 @@
         "rainbow": { "type": "boolean", "description": "unicorn: draw the arching rainbow bands." },
         "aurora": { "type": "boolean", "description": "unicorn: draw a soft drifting aurora glow (night motif)." },
         "glitter": { "type": "boolean", "description": "unicorn: draw a shimmering glitter dust layer." },
-        "shootingStar": { "type": "boolean", "description": "unicorn: draw occasional shooting-star streaks." }
+        "shootingStar": { "type": "boolean", "description": "unicorn: draw occasional shooting-star streaks." },
+        "moon": { "type": "boolean", "description": "spooky: draw a pale full moon with a soft halo." },
+        "fog": { "type": "boolean", "description": "spooky: draw low drifting mist bands along the bottom." },
+        "gravestones": { "type": "boolean", "description": "spooky: draw a gravestone silhouette along the bottom edge." },
+        "webs": { "type": "boolean", "description": "spooky: draw a corner spiderweb." },
+        "ghosts": { "type": "boolean", "description": "spooky: draw pale ghost wisps rising and fading." },
+        "bats": { "type": "boolean", "description": "spooky: draw small bat silhouettes flapping across." },
+        "eyes": { "type": "boolean", "description": "spooky: draw pairs of glowing eyes that blink in the dark." },
+        "lightning": { "type": "boolean", "description": "spooky: draw occasional full-card lightning flashes." }
       }
     }
   }

@@ -40,4 +40,9 @@ check "schema scene.kind allows unicorn" "jq -e '.definitions.scene.properties.k
 check "schema defines unicorn scene flags" \
   "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"aurora\"),has(\"rainbow\"),has(\"glitter\"),has(\"sparkles\"),has(\"shootingStar\")]' '$SCHEMA')\" == '[true,true,true,true,true]' ]]"
 
+check "spooky has spooky scene"          "[[ \"\$(jq -r '.themes.spooky.scene.kind // empty' '$F')\" == 'spooky' ]]"
+check "schema scene.kind allows spooky"  "jq -e '.definitions.scene.properties.kind.enum|index(\"spooky\")' '$SCHEMA' >/dev/null"
+check "schema defines spooky scene flags" \
+  "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"moon\"),has(\"fog\"),has(\"gravestones\"),has(\"webs\"),has(\"ghosts\"),has(\"bats\"),has(\"eyes\"),has(\"lightning\")]' '$SCHEMA')\" == '[true,true,true,true,true,true,true,true]' ]]"
+
 exit $fail
