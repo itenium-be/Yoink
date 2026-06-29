@@ -24,6 +24,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-waves.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-space.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-matrix.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-sakura.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -151,12 +152,18 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     streaks = [bool](Get-Prop $theme.scene 'streaks')
     density = (Coalesce (Get-Prop $theme.scene 'density') 0.85)
     glyphs  = [string](Coalesce (Get-Prop $theme.scene 'glyphs') 'katakana')
+    petals   = [bool](Coalesce (Get-Prop $theme.scene 'petals') $true)
+    count    = [int](Coalesce (Get-Prop $theme.scene 'count') 22)
+    bloom    = [bool](Get-Prop $theme.scene 'bloom')
+    branch   = [bool](Get-Prop $theme.scene 'branch')
+    parallax = [bool](Get-Prop $theme.scene 'parallax')
   }
 }
 $sceneKinds = @{
   waves  = { param($b, $c) Start-Waves $b $c }
   space  = { param($b, $c) Start-Space $b $c }
   matrix = { param($b, $c) Start-Matrix $b $c }
+  sakura = { param($b, $c) Start-Sakura $b $c }
 }
 $win.Add_Loaded({
   if ($sceneCfg) {

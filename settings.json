@@ -49,7 +49,8 @@
       "hero": "🌸",
       "gradient": ["#FF8FB1 0", "#FFB7C5 0.3", "#FBC2EB 0.6", "#E0AAFF 0.85", "#C8A2FF 1"],
       "rim": ["#DB2777 0", "#EC4899 0.25", "#F472B6 0.5", "#E879F9 0.75", "#C084FC 1"],
-      "card": "#1A1620"
+      "card": "#1A1620",
+      "scene": { "kind": "sakura", "petals": true, "count": 22, "speed": 1.0, "bloom": true, "branch": true, "parallax": true }
     },
     "matrix": {
       // "hero": { "emoji": "🐇", "color": "white" },

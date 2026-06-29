@@ -170,7 +170,7 @@
       "required": ["kind"],
       "description": "Optional animated backdrop for the theme.",
       "properties": {
-        "kind": { "enum": ["waves", "space", "matrix"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic) or \"matrix\" (digital rain)." },
+        "kind": { "enum": ["waves", "space", "matrix", "sakura"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain) or \"sakura\" (cherry-blossom petals)." },
         "colors": {
           "type": "array",
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
@@ -186,7 +186,12 @@
         "comets": { "type": "boolean", "description": "space: draw occasional shooting-star streaks." },
         "density": { "type": "number", "minimum": 0, "maximum": 1, "description": "matrix: fraction of columns that carry a glyph stream (default 0.85)." },
         "glyphs": { "enum": ["katakana", "latin", "digits", "binary", "mixed"], "description": "matrix: glyph repertoire for the rain (default \"katakana\")." },
-        "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." }
+        "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." },
+        "petals": { "type": "boolean", "description": "sakura: draw falling cherry-blossom petals (default true)." },
+        "count": { "type": "integer", "minimum": 1, "description": "sakura: number of background petals (default 22)." },
+        "bloom": { "type": "boolean", "description": "sakura: draw soft drifting pink/lilac bokeh glows." },
+        "branch": { "type": "boolean", "description": "sakura: draw a blossom branch in the top-left corner." },
+        "parallax": { "type": "boolean", "description": "sakura: add a few large fast foreground petals for depth." }
       }
     }
   }
