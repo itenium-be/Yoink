@@ -58,4 +58,30 @@ $names = $cfg.themes.PSObject.Properties.Name
 $r = Resolve-ThemeName ([pscustomobject]@{ activeTheme='random'; themes=$cfg.themes })
 Assert-Eq ($names -contains $r) 'True' "random theme name is a configured theme"
 
+# --- Resolve-BodyLines ---
+$ctx = @{ folder='notify'; branch=''; message='Needs permission'; agents=''; last_prompt='fix flag' }
+
+$body = @(
+  @{ text='{{message}}';             style='headline' },
+  @{ text='{{folder}} · {{branch}}';  style='sub' },
+  @{ text='{{agents}} agents running'; style='muted' },
+  @{ text='{{last_prompt}}';          style='weird' }
+)
+$lines = @(Resolve-BodyLines $body $ctx)
+Assert-Eq $lines.Count 3 "all-empty 'agents' line dropped"
+Assert-Eq $lines[0].text 'Needs permission' "headline resolved"
+Assert-Eq $lines[0].style 'headline' "headline style kept"
+Assert-Eq $lines[1].text 'notify' "empty branch -> dangling separator trimmed"
+Assert-Eq $lines[2].text 'fix flag' "muted line resolved"
+Assert-Eq $lines[2].style 'sub' "unknown style normalised to sub"
+
+# both tokens empty -> whole line dropped
+$lines2 = @(Resolve-BodyLines @(@{ text='{{folder}} · {{branch}}'; style='sub' }) @{ folder=''; branch='' })
+Assert-Eq $lines2.Count 0 "line with all-empty tokens dropped"
+
+# pure literal always kept
+$lines3 = @(Resolve-BodyLines @(@{ text='hello'; style='sub' }) @{})
+Assert-Eq $lines3.Count 1 "pure literal kept"
+Assert-Eq $lines3[0].text 'hello' "pure literal text"
+
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }

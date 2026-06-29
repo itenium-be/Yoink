@@ -103,3 +103,33 @@ function Resolve-Event($cfg, [string]$event) {
     body      = @(Coalesce (Get-Prop $e 'body')      $def.body)
   }
 }
+
+# Body templates + context -> cleaned, styled lines.
+# Rules: a line whose tokens ALL resolve empty is dropped whole; otherwise dangling
+# separator chars are trimmed; empty results are dropped; pure-literal lines are kept.
+function Resolve-BodyLines($body, [hashtable]$ctx) {
+  $rx = [regex]'\{\{(\w+)\}\}'
+  $sep = " `t·-|/".ToCharArray()
+  $out = @()
+  foreach ($line in $body) {
+    $tpl   = [string](Get-Prop $line 'text')
+    $style = [string](Get-Prop $line 'style')
+    if (@('headline','sub','muted') -notcontains $style) { $style = 'sub' }
+
+    $names = @($rx.Matches($tpl) | ForEach-Object { $_.Groups[1].Value })
+    $vals = @{}; $anyVal = $false
+    foreach ($n in $names) {
+      $v = ''
+      if ($ctx.ContainsKey($n)) { $v = [string]$ctx[$n] }
+      $vals[$n] = $v
+      if ($v -ne '') { $anyVal = $true }
+    }
+    if ($names.Count -ge 1 -and -not $anyVal) { continue }
+
+    $text = $rx.Replace($tpl, [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $vals[$m.Groups[1].Value] })
+    $text = ($text -replace '\s+', ' ').Trim().Trim($sep).Trim()
+    if ($text -eq '') { continue }
+    $out += @{ text = $text; style = $style }
+  }
+  $out
+}
