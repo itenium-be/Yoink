@@ -57,10 +57,13 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
 }
-.theme-row { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: clamp(24px, 5vw, 48px); }
+.theme-row {
+  display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 7px;
+  margin-bottom: clamp(24px, 5vw, 48px);
+}
 .theme-pill {
-  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  padding: 8px 14px; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+  min-width: 0; padding: 8px 6px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
   color: var(--ink); background: rgba(255,255,255,.05); border: 1px solid var(--hair);
   transition: transform .12s ease, border-color .2s, background .2s;
 }
@@ -97,9 +100,8 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
 .notif-rim {
   position: absolute; inset: -3px; border-radius: 22px; z-index: 0;
   background: conic-gradient(from 0deg, var(--rim));
-  filter: blur(.3px); animation: spin 7s linear infinite; opacity: .95;
+  filter: blur(.3px); opacity: .95;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
 .notif-card {
   position: relative; z-index: 1; border-radius: 19px; padding: 22px 22px 18px;
   background: var(--card); overflow: hidden;
@@ -202,6 +204,5 @@ code { font-family: ui-monospace, monospace; }
   .steps, .feature-grid, .theme-gallery, .media-row { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .notif-rim { animation: none; }
   #scene { display: none; }
 }

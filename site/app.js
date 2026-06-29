@@ -65,7 +65,6 @@ function applyTheme(key) {
     p.setAttribute('aria-pressed', String(p.dataset.theme === key)));
   document.getElementById('heroEmoji').textContent = t.hero;
   document.getElementById('themeName').textContent = t.name;
-  document.getElementById('sceneBlurb').textContent = t.blurb;
 
   startScene(t);
 }
@@ -213,8 +212,6 @@ function initCopy() {
 
 document.addEventListener('DOMContentLoaded', () => {
   buildPills();
-  document.querySelectorAll('.event-tab').forEach(b =>
-    b.addEventListener('click', () => applyEvent(b.dataset.event)));
   initCopy();
   applyEvent('done');
   applyTheme('unicorn');
