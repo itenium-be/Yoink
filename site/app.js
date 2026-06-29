@@ -71,8 +71,6 @@ function applyTheme(key) {
     video.src = `assets/yoink-${file}.mp4`;
     video.load();
   }
-  const box = document.getElementById('boxImg');
-  if (box) box.src = `assets/boxes/${file}.png`;
 
   startScene(t);
 }
@@ -221,6 +219,61 @@ function buildPills() {
   }
 }
 
+// Auto-cycling box-image carousel, independent of the theme pills.
+function initBoxCarousel() {
+  const root = document.getElementById('boxCarousel');
+  if (!root) return;
+  const track = root.querySelector('.box-track');
+  const keys = Object.keys(THEMES);
+
+  for (const key of keys) {
+    // 'vaporwave' theme key maps to the 'vaporware' filename — the lone exception (see applyTheme)
+    const file = key === 'vaporwave' ? 'vaporware' : key;
+    const img = document.createElement('img');
+    img.src = `assets/boxes/${file}.png`;
+    img.alt = `${THEMES[key].name} notification box`;
+    img.width = 636; img.height = 212; img.draggable = false;
+    track.appendChild(img);
+  }
+
+  const badge = root.querySelector('.box-badge');
+  const len = keys.length;
+  let i = 0, timer = null, paused = false;
+  const render = () => {
+    track.style.transform = `translateX(${-i * 100}%)`;
+    if (badge) badge.textContent = THEMES[keys[i]].name;
+  };
+  const go = (dir) => { i = (i + dir + len) % len; render(); };
+
+  const stop = () => { clearInterval(timer); timer = null; };
+  const play = () => { stop(); if (!paused) timer = setInterval(() => go(1), 3500); };
+
+  root.querySelector('.box-next').addEventListener('click', () => { go(1); play(); });
+  root.querySelector('.box-prev').addEventListener('click', () => { go(-1); play(); });
+
+  root.addEventListener('pointerenter', () => { paused = true; stop(); });
+  root.addEventListener('pointerleave', () => { paused = false; play(); });
+
+  // pointer swipe / drag: commit on release past a threshold
+  let down = false, x0 = 0, dx = 0;
+  root.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.box-arrow')) return;
+    down = true; x0 = e.clientX; dx = 0; root.setPointerCapture(e.pointerId);
+  });
+  root.addEventListener('pointermove', (e) => { if (down) dx = e.clientX - x0; });
+  const release = () => {
+    if (!down) return;
+    down = false;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    play();
+  };
+  root.addEventListener('pointerup', release);
+  root.addEventListener('pointercancel', release);
+
+  render();
+  play();
+}
+
 function initCopy() {
   document.querySelectorAll('[data-copy]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -244,6 +297,7 @@ function initInstallTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   buildPills();
+  initBoxCarousel();
   initCopy();
   initInstallTabs();
   applyEvent('done');

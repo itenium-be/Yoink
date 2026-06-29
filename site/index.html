@@ -41,7 +41,12 @@
           Claude Code terminal lives — window flash, sound and an animated
           Claude mascot.
         </p>
-        <img id="boxImg" class="hero-box" src="assets/boxes/unicorn.png" alt="Example notification box" width="636" height="212" />
+        <div id="boxCarousel" class="box-carousel" aria-roledescription="carousel" aria-label="Theme box examples">
+          <div class="box-track"></div>
+          <span class="box-badge" aria-live="polite"></span>
+          <button class="box-arrow box-prev" type="button" aria-label="Previous example">‹</button>
+          <button class="box-arrow box-next" type="button" aria-label="Next example">›</button>
+        </div>
       </div>
 
       <h2 class="pick-title">Pick your theme</h2>
@@ -95,6 +100,7 @@ sudo apt install jq</code></pre><button class="copy" data-copy="code-clone">Copy
           <div class="code"><pre id="code-editor"><code>.\settings-editor.ps1</code></pre><button class="copy" data-copy="code-editor">Copy</button></div>
         </li>
       </ol>
+      <p class="install-note"><strong>Note:</strong> Start a fresh session after installing — the <code>SessionStart</code> hook records your terminal's monitor, so a plugin reload alone leaves notifications on the cursor's screen.</p>
     </section>
   </main>
 
