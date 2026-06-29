@@ -137,6 +137,7 @@ function New-NotificationBox {
   $st = $win.FindName('status'); $st.Text = $statusText
   $st.Foreground = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString($accent))
   $bodyPanel = $win.FindName('bodyPanel')
+  $bodyTbs = New-Object System.Collections.Generic.List[object]
   foreach ($ln in $BodyLines) {
     $tb = New-Object System.Windows.Controls.TextBlock
     $tb.Text = [string]$ln.text
@@ -147,6 +148,7 @@ function New-NotificationBox {
       default    { $tb.FontSize = 19; $tb.Foreground = (New-Brush '#FFFFFF'); $tb.Margin = (New-Object System.Windows.Thickness 0,4,0,0) }
     }
     $bodyPanel.Children.Add($tb) | Out-Null
+    [void]$bodyTbs.Add($tb)
   }
 
   # Footer badges: rounded pills. Empty color/background fall back to defaults; an invalid
@@ -196,6 +198,48 @@ function New-NotificationBox {
       $rot.BeginAnimation([System.Windows.Media.RotateTransform]::AngleProperty, $spin)
     }
     if ($Ev.indicator -eq 'fireworks') { Start-Fireworks ($win.FindName('fx')) (@(Get-StopColors $Theme.gradient)) }
+
+    # Reveal overflowing body lines: a tooltip with the full text + a gentle ping-pong
+    # marquee so the trimmed tail can be read. Needs a layout pass (ActualWidth), hence here.
+    foreach ($tb in $bodyTbs) {
+      $avail = $tb.ActualWidth
+      if ($avail -le 0) { continue }
+      $ft = New-Object System.Windows.Media.FormattedText(
+        $tb.Text, [System.Globalization.CultureInfo]::CurrentCulture, [System.Windows.FlowDirection]::LeftToRight,
+        (New-Object System.Windows.Media.Typeface($tb.FontFamily, $tb.FontStyle, $tb.FontWeight, $tb.FontStretch)),
+        $tb.FontSize, [System.Windows.Media.Brushes]::Black)
+      if ($ft.WidthIncludingTrailingWhitespace -le $avail + 1) { continue }   # fits, no ellipsis
+      $full = $ft.WidthIncludingTrailingWhitespace
+      $tb.ToolTip = $tb.Text
+
+      # Clip a viewport at the current width, let the text run full-width inside it, and
+      # ping-pong a TranslateTransform so the hidden tail scrolls into view.
+      $panel = $tb.Parent
+      $idx = $panel.Children.IndexOf($tb)
+      $vp = New-Object System.Windows.Controls.Grid
+      $vp.Width = $avail; $vp.Height = $tb.ActualHeight; $vp.HorizontalAlignment = 'Left'
+      $vp.ClipToBounds = $true; $vp.Margin = $tb.Margin
+      $panel.Children.RemoveAt($idx)
+      $tb.Margin = (New-Object System.Windows.Thickness 0)
+      $tb.HorizontalAlignment = 'Left'
+      $tb.TextTrimming = [System.Windows.TextTrimming]::None
+      $tb.TextWrapping = [System.Windows.TextWrapping]::NoWrap
+      $tt = New-Object System.Windows.Media.TranslateTransform
+      $tb.RenderTransform = $tt
+      $vp.Children.Add($tb) | Out-Null
+      $panel.Children.Insert($idx, $vp)
+
+      $travel = -($full - $avail + 6)
+      $scroll = [int]([Math]::Abs($travel) * 12)   # ~12ms per px
+      $kf = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
+      $kf.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+      $stops = @(@(0, 0), @(1500, 0), @((1500 + $scroll), $travel), @((3000 + $scroll), $travel), @((3000 + 2 * $scroll), 0))
+      foreach ($s in $stops) {
+        $kt = [System.Windows.Media.Animation.KeyTime]::FromTimeSpan([TimeSpan]::FromMilliseconds($s[0]))
+        $kf.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame([double]$s[1], $kt))) | Out-Null
+      }
+      $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::XProperty, $kf)
+    }
   }.GetNewClosure())
 
   return @{

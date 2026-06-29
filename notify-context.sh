@@ -28,7 +28,7 @@ DIRTY=""; [[ -n "$(git -C "$CWD" status --porcelain 2>/dev/null)" ]] && DIRTY="�
 # Blank a zero/empty agent count so the "{{agents}} agents running" line drops out.
 [[ "$AGENTS" == "0" || -z "$AGENTS" ]] && AGENTS=""
 
-trunc() { local s="$1" n=120; if (( ${#s} > n )); then printf '%s…' "${s:0:n}"; else printf '%s' "$s"; fi; }
+trunc() { local s="$1" n=300; if (( ${#s} > n )); then printf '%s…' "${s:0:n}"; else printf '%s' "$s"; fi; }
 LPROMPT="$(trunc "$LPROMPT")"; LASSIST="$(trunc "$LASSIST")"
 
 jq -n \
