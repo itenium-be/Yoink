@@ -412,13 +412,13 @@ function Add-DragonSmoke($canvas, [double]$w, [double]$h, [double]$speed) {
   }
 }
 
-# A distant volcano backdrop, offset to the left: a dark cone with a crater, a lava
-# trickle down the slope, a drifting smoke plume and a few ejected sparks. Drawn first
-# (behind everything) as a background. Motion is transform-driven (rise/sway/pulse).
+# A distant volcano backdrop, offset to the left: a dark-brown mountain cone with a
+# crater and a few ejected sparks. Drawn behind everything as a background. Motion is
+# transform-driven (rise/sway).
 function Add-DragonVolcano($canvas, [double]$w, [double]$h, [double]$speed) {
   $ic = [System.Globalization.CultureInfo]::InvariantCulture
   $n = { param($v) ([double]$v).ToString('0.##', $ic) }
-  $px = $w * 0.30                 # peak centre (offset left)
+  $px = $w * 0.18                 # peak centre (offset well to the left)
   $py = $h * 0.34                 # peak height
   $baseHalf = $w * 0.27
   $craterHalf = $w * 0.055
@@ -433,64 +433,24 @@ function Add-DragonVolcano($canvas, [double]$w, [double]$h, [double]$speed) {
     "L $(& $n ($px+$craterHalf*0.4)) $(& $n $craterFloor) " +
     "L $(& $n ($px+$craterHalf)) $(& $n $py) " +
     "L $(& $n ($px+$baseHalf)) $(& $n $h) Z")
-  $cg = New-Object System.Windows.Media.LinearGradientBrush
-  $cg.StartPoint = '0,0'; $cg.EndPoint = '0,1'
-  $cg.GradientStops.Add((New-SceneStopLocal '#2A1A14' 0.0))
-  $cg.GradientStops.Add((New-SceneStopLocal '#180D08' 1.0))
-  $cone.Fill = $cg
+  # Flat, fully-opaque very-dark brown (an ominous mountain); a lit rim keeps the
+  # silhouette readable against the near-black card.
+  $cone.Fill = New-Brush '#140800'
+  $cone.Stroke = New-Brush '#33200F'; $cone.StrokeThickness = 1.0   # subtle dark edge, just lifts it off the card
   $canvas.Children.Add($cone) | Out-Null
 
-  # Modest crater source so the trickle and sparks have an origin.
+  # Small confined glow in the crater notch (origin for the sparks); kept tight so it
+  # does not spill down and wash out the cone.
   $src = New-Object System.Windows.Shapes.Ellipse
-  $sr = $craterHalf * 1.6
+  $sr = $craterHalf * 0.7
   $src.Width = $sr * 2; $src.Height = $sr
   $srg = New-Object System.Windows.Media.RadialGradientBrush
-  $srg.GradientStops.Add((New-DragonStop '#FFF3B0' 0.7 0.0))
-  $srg.GradientStops.Add((New-DragonStop '#F97316' 0.3 0.6))
+  $srg.GradientStops.Add((New-DragonStop '#FFF3B0' 0.6 0.0))
+  $srg.GradientStops.Add((New-DragonStop '#F97316' 0.25 0.55))
   $srg.GradientStops.Add((New-DragonStop '#F97316' 0.0 1.0))
   $src.Fill = $srg
   [System.Windows.Controls.Canvas]::SetLeft($src, $px - $sr); [System.Windows.Controls.Canvas]::SetTop($src, $craterFloor - $sr * 0.5)
   $canvas.Children.Add($src) | Out-Null
-
-  # Lava trickle down the right slope.
-  $tr = New-Object System.Windows.Shapes.Path
-  $tr.Data = [System.Windows.Media.Geometry]::Parse(
-    "M $(& $n ($px+$craterHalf*0.5)) $(& $n $craterFloor) " +
-    "L $(& $n ($px+$craterHalf*1.6)) $(& $n ($py+$h*0.14)) " +
-    "L $(& $n ($px+$baseHalf*0.55)) $(& $n ($py+$h*0.30)) " +
-    "L $(& $n ($px+$baseHalf*0.7)) $(& $n $h)")
-  $tr.Stroke = New-Brush '#FB923C'; $tr.StrokeThickness = 2.4
-  $tr.StrokeStartLineCap = 'Round'; $tr.StrokeEndLineCap = 'Round'; $tr.StrokeLineJoin = 'Round'
-  $canvas.Children.Add($tr) | Out-Null
-
-  # Drifting smoke plume above the crater.
-  for ($i = 0; $i -lt 4; $i++) {
-    $r = $h * (0.12 + (Get-Random -Minimum 0 -Maximum 14) / 100.0)
-    $e = New-Object System.Windows.Shapes.Ellipse
-    $e.Width = $r * 2; $e.Height = $r * 2
-    $rg = New-Object System.Windows.Media.RadialGradientBrush
-    $rg.GradientStops.Add((New-DragonStop '#4A4340' 0.22 0.0))
-    $rg.GradientStops.Add((New-DragonStop '#2A2422' 0.10 0.55))
-    $rg.GradientStops.Add((New-DragonStop '#1A0F0A' 0.0 1.0))
-    $e.Fill = $rg
-    [System.Windows.Controls.Canvas]::SetLeft($e, $px - $r); [System.Windows.Controls.Canvas]::SetTop($e, $craterFloor - $r)
-    $sc = New-Object System.Windows.Media.ScaleTransform 0.5, 0.5
-    $sc.CenterX = $r; $sc.CenterY = $r
-    $tt = New-Object System.Windows.Media.TranslateTransform
-    $grp = New-Object System.Windows.Media.TransformGroup
-    $grp.Children.Add($sc); $grp.Children.Add($tt)
-    $e.RenderTransform = $grp
-    $canvas.Children.Add($e) | Out-Null
-    $dur = (9.0 + (Get-Random -Minimum 0 -Maximum 60) / 10.0) / $speed
-    Add-VertLoop $tt $craterFloor (-$r) $dur ((Get-Random -Minimum 0 -Maximum 1000) / 1000.0)
-    $sway = New-Object System.Windows.Media.Animation.DoubleAnimation (-$w * 0.04), ($w * 0.06), ([System.Windows.Duration][TimeSpan]::FromSeconds($dur * 0.5))
-    $sway.AutoReverse = $true; $sway.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-    $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::XProperty, $sway)
-    $grow = New-Object System.Windows.Media.Animation.DoubleAnimation 0.4, 1.2, ([System.Windows.Duration][TimeSpan]::FromSeconds($dur))
-    $grow.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-    $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleXProperty, $grow)
-    $sc.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleYProperty, $grow)
-  }
 
   # A few sparks ejected upward from the crater, fanning out.
   for ($i = 0; $i -lt 6; $i++) {
@@ -530,8 +490,8 @@ function Start-Dragon($box, $cfg) {
   $count = [int]$cfg.count; if ($count -le 0) { $count = 26 }
   $bottom = [string]$cfg.bottom; if (-not $bottom) { $bottom = 'lava' }
 
-  if ($cfg.volcano) { Add-DragonVolcano $canvas $w $h $speed }
   if ($cfg.glow)   { Add-DragonGlow $canvas $w $h $speed }
+  if ($cfg.volcano) { Add-DragonVolcano $canvas $w $h $speed }   # in front of the glow wash so it reads solid
   switch ($bottom) {
     'lava'     { Add-DragonLava     $canvas $w $h $speed }
     'treasure' { Add-DragonTreasure $canvas $w $h $speed }
