@@ -9,13 +9,15 @@ param(
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 . (Join-Path $PSScriptRoot 'lib\settings-model.ps1')
 
-# --- Load model + derive a concrete selected theme (even when activeTheme is "random") ---
+# --- Load model + derive the selected event and a concrete selected theme (even when
+#     activeTheme is "random"). The event + theme dropdowns mutate these and rebuild the form. ---
 $script:model = Read-SettingsModel $SettingsPath
-$enums = Get-SchemaEnums (Join-Path $PSScriptRoot 'settings.schema.json')
+$script:enums = Get-SchemaEnums (Join-Path $PSScriptRoot 'settings.schema.json')
 $script:themeNames = @((Get-ModelValue $script:model @('themes')).Keys)
+$script:selectedEvent = $Event
 $active = [string](Get-ModelValue $script:model @('activeTheme'))
 $script:selectedTheme = if ($active -and $active -ne 'random' -and ($script:themeNames -contains $active)) { $active } else { $script:themeNames[0] }
-$fields = Get-EditorFields $script:model $enums $Event $script:selectedTheme
+$fields = Get-EditorFields $script:model $script:enums $script:selectedEvent $script:selectedTheme
 
 # --- Headless seam: print the field list (and optionally Save), then exit ---
 if ($DryRun) {
@@ -80,25 +82,34 @@ function Request-Rebuild { $script:rebuildTimer.Stop(); $script:rebuildTimer.Sta
 # (script-scoped) so it and its dot-sourced callees stay visible; refs kept at script scope
 # for the grid's Loaded handler (which runs after this returns).
 function Invoke-Rebuild {
-  # KNOWN v1 LIMITATION: each rebuild spawns a fresh card whose mascot DispatcherTimer and
-  # scene/rim "Forever" animations keep running on the shared Dispatcher even after the old
-  # grid is detached (clocks/timers aren't tied to the visual tree). Repeated edits therefore
-  # accumulate looping animations -> growing CPU over a long session. Proper teardown
-  # (tracking + stopping each box's clocks) is deferred; restart the editor if it gets sluggish.
+  # Stop the outgoing card's looping mascot frame-timers before discarding it; otherwise each
+  # edit leaves a flipbook ticking on the shared Dispatcher and after a few switches they pile
+  # up and visibly jank the live mascot. (Scene/rim animations are WPF clocks tied to the
+  # detached grid, so they stop on their own once it's GC'd.)
+  if ($script:box) { Stop-CardAnimations $script:box }
   $script:cardHost.Children.Clear()
   $themeName = [string](Get-ModelValue $script:model @('activeTheme'))
   if (-not $themeName -or $themeName -eq 'random' -or -not ($script:themeNames -contains $themeName)) { $themeName = $script:selectedTheme }
   $script:theme = Resolve-Theme $script:model $themeName
-  $script:ev    = Resolve-Event $script:model $Event
+  $script:ev    = Resolve-Event $script:model $script:selectedEvent
   $bodyLines = @(Resolve-BodyLines $script:ev.body $script:ctx)
   $footer    = @(Resolve-Footer $script:ev.footer $script:ctx)
   $wa = New-Object System.Drawing.Rectangle 0, 0, 1920, 1080
-  $script:box = New-NotificationBox -Event $Event -Theme $script:theme -Ev $script:ev -BodyLines $bodyLines -Footer $footer -WorkArea $wa
+  $script:box = New-NotificationBox -Event $script:selectedEvent -Theme $script:theme -Ev $script:ev -BodyLines $bodyLines -Footer $footer -WorkArea $wa
   $grid = $script:box.Win.Content; $script:box.Win.Content = $null   # steal the inner card Grid
   $grid.Opacity = 1                                                  # the unshown source Window starts at 0
+  $grid.Tag = $script:box                                            # bind the grid to its own box
   # Run card setup + choreography once the stolen Grid lays out in its new host. Plain
-  # scriptblock (script scope) so the dot-sourced Initialize-/Start- functions stay visible.
-  $grid.Add_Loaded({ Initialize-NotificationCard $script:box; Start-CardChoreography $script:box $script:theme $script:ev })
+  # scriptblock (script scope) so the dot-sourced Initialize-/Start- functions stay visible; the
+  # box comes from the grid's .Tag (not $script:box, which a later rebuild may have replaced),
+  # and Started makes it one-shot so a second Loaded can't stack a duplicate choreography.
+  $grid.Add_Loaded({
+    $b = $this.Tag
+    if ($b.Started) { return }
+    $b.Started = $true
+    Initialize-NotificationCard $b
+    Start-CardChoreography $b $b.Theme $b.Ev
+  })
   $script:cardHost.Children.Add($grid) | Out-Null
 }
 
@@ -106,6 +117,32 @@ function Invoke-Rebuild {
 $onCheck = { $f = $this.Tag; Set-ModelValue $script:model $f.path ([bool]$this.IsChecked); Request-Rebuild }
 $onCombo = { $f = $this.Tag; Set-ModelValue $script:model $f.path ([string]$this.SelectedItem); Request-Rebuild }
 $onText  = { $f = $this.Tag; Set-ModelValue $script:model $f.path (ConvertTo-ModelValue $f.kind $this.Text); Request-Rebuild }
+# WPF has no built-in colour picker; reuse the WinForms ColorDialog (already loaded). The
+# button's .Tag is its hex TextBox: writing .Text fires TextChanged -> model update + rebuild.
+$onPick = {
+  $tb = $this.Tag
+  $dlg = New-Object System.Windows.Forms.ColorDialog
+  $dlg.FullOpen = $true
+  if ($tb.Text -match '^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$') {
+    $dlg.Color = [System.Drawing.Color]::FromArgb([Convert]::ToInt32($matches[1], 16), [Convert]::ToInt32($matches[2], 16), [Convert]::ToInt32($matches[3], 16))
+  }
+  if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+    $hex = '#{0:X2}{1:X2}{2:X2}' -f $dlg.Color.R, $dlg.Color.G, $dlg.Color.B
+    $tb.Text = $hex
+    $this.Background = New-Brush $hex
+  }
+}
+# The event + theme dropdowns are reactive: they change which fields exist (event group /
+# theme group), so changing either re-derives the field list and rebuilds the whole form.
+# Picking a concrete theme also makes it the active theme. The other handlers only mutate a
+# value and re-render the preview.
+$onEvent = { $script:selectedEvent = [string]$this.SelectedItem; Build-Form; Request-Rebuild }
+$onTheme = {
+  $sel = [string]$this.SelectedItem
+  Set-ModelValue $script:model @('activeTheme') $sel
+  if ($sel -ne 'random' -and ($script:themeNames -contains $sel)) { $script:selectedTheme = $sel }
+  Build-Form; Request-Rebuild
+}
 
 function Add-Row($labelText, $control) {
   $row = New-Object System.Windows.Controls.DockPanel
@@ -118,7 +155,8 @@ function Add-Row($labelText, $control) {
   $script:form.Children.Add($row) | Out-Null
 }
 
-foreach ($f in $fields) {
+# Build one labelled control for a field descriptor, using the generic value handlers.
+function Add-FieldRow($f) {
   switch ($f.kind) {
     'checkbox' {
       $c = New-Object System.Windows.Controls.CheckBox
@@ -133,14 +171,48 @@ foreach ($f in $fields) {
       $c.Tag = $f; $c.Add_SelectionChanged($onCombo)
       Add-Row $f.label $c
     }
-    default {   # 'text' and 'number'
+    default {   # 'text' and 'number'; hex-colour text fields also get a swatch picker
       $c = New-Object System.Windows.Controls.TextBox
-      $c.Text = [string](Get-ModelValue $script:model $f.path); $c.Width = 360; $c.HorizontalAlignment = 'Left'
+      $c.Text = [string](Get-ModelValue $script:model $f.path); $c.HorizontalAlignment = 'Left'
       $c.Tag = $f; $c.Add_TextChanged($onText)
-      Add-Row $f.label $c
+      if ($f.kind -eq 'text' -and $c.Text -match '^#[0-9A-Fa-f]{6}$') {
+        $c.Width = 100
+        $pick = New-Object System.Windows.Controls.Button
+        $pick.Content = 'Pick'; $pick.Width = 56; $pick.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
+        $pick.Background = New-Brush $c.Text; $pick.Tag = $c; $pick.Add_Click($onPick)
+        $wrap = New-Object System.Windows.Controls.StackPanel; $wrap.Orientation = 'Horizontal'
+        $wrap.Children.Add($c) | Out-Null; $wrap.Children.Add($pick) | Out-Null
+        Add-Row $f.label $wrap
+      } else {
+        $c.Width = 360
+        Add-Row $f.label $c
+      }
     }
   }
 }
+
+# A reactive dropdown: seed SelectedItem BEFORE attaching the handler so seeding can't fire
+# a spurious rebuild.
+function Add-SelectorRow($labelText, $options, $selected, $handler) {
+  $c = New-Object System.Windows.Controls.ComboBox
+  foreach ($o in $options) { $c.Items.Add([string]$o) | Out-Null }
+  $c.SelectedItem = [string]$selected
+  $c.Add_SelectionChanged($handler)
+  Add-Row $labelText $c
+}
+
+# (Re)populate the form: event selector + event group, then theme selector + theme group.
+# Called on startup and whenever the event/theme selection changes (which changes the fields).
+function Build-Form {
+  $script:form.Children.Clear()
+  $fields = Get-EditorFields $script:model $script:enums $script:selectedEvent $script:selectedTheme
+  Add-SelectorRow 'event' @('done', 'needs-input') $script:selectedEvent $onEvent
+  foreach ($f in $fields | Where-Object { $_.path[0] -eq 'events' }) { Add-FieldRow $f }
+  $themeField = $fields | Where-Object { ($_.path -join '.') -eq 'activeTheme' } | Select-Object -First 1
+  if ($themeField) { Add-SelectorRow $themeField.label $themeField.options (Get-ModelValue $script:model @('activeTheme')) $onTheme }
+  foreach ($f in $fields | Where-Object { $_.path[0] -eq 'themes' }) { Add-FieldRow $f }
+}
+Build-Form
 
 $win.FindName('save').Add_Click({
   Set-Content -Path $SettingsPath -Value (ConvertTo-SettingsJson $script:model) -Encoding UTF8
@@ -148,7 +220,11 @@ $win.FindName('save').Add_Click({
 })
 $win.FindName('reload').Add_Click({
   $script:model = Read-SettingsModel $SettingsPath
-  $script:status.Text = 'Reloaded — restart to rebuild the form'; Request-Rebuild
+  $script:themeNames = @((Get-ModelValue $script:model @('themes')).Keys)
+  $a = [string](Get-ModelValue $script:model @('activeTheme'))
+  $script:selectedTheme = if ($a -and $a -ne 'random' -and ($script:themeNames -contains $a)) { $a } else { $script:themeNames[0] }
+  Build-Form
+  $script:status.Text = "Reloaded $([DateTime]::Now.ToString('HH:mm:ss'))"; Request-Rebuild
 })
 
 # --- Headless self-test: one synchronous rebuild + confirm the card functions are loaded ---

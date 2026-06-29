@@ -59,9 +59,9 @@ Edits are in-memory until you press **Save**.
 ```
 
 Pick the event, theme, mascot moves, sounds and the active theme's scene toggles; the card
-re-renders as you change them. Body/footer text and gradient colours aren't editable yet —
-edit those in `settings.json` directly. The preview spawns a fresh animated card per edit, so
-after many tweaks it can get sluggish — restart the editor if so.
+re-renders as you change them, and a colour swatch button opens the Windows colour picker for
+hex fields. Body/footer text and gradient colours aren't editable yet — edit those in
+`settings.json` directly.
 
 ## Configuration
 
