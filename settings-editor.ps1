@@ -13,6 +13,9 @@ param(
 #     activeTheme is "random"). The event + theme dropdowns mutate these and rebuild the form. ---
 $script:model = Read-SettingsModel $SettingsPath
 $script:enums = Get-SchemaEnums (Join-Path $PSScriptRoot 'settings.schema.json')
+# Wav files the theme sound pickers offer (leading '' = silent).
+$script:soundsDir = Join-Path $PSScriptRoot 'sounds'
+$script:enums['sound.files'] = @('') + @(if (Test-Path $script:soundsDir) { (Get-ChildItem $script:soundsDir -Filter *.wav | Sort-Object Name).Name })
 $script:themeNames = @((Get-ModelValue $script:model @('themes')).Keys)
 $script:selectedEvent = $Event
 $active = [string](Get-ModelValue $script:model @('activeTheme'))
@@ -117,6 +120,11 @@ function Invoke-Rebuild {
 # --- Per-control handlers: plain (script scope); per-control state via .Tag, never closures ---
 $onCheck = { $f = $this.Tag; Set-ModelValue $script:model $f.path ([bool]$this.IsChecked); Request-Rebuild }
 $onCombo = { $f = $this.Tag; Set-ModelValue $script:model $f.path ([string]$this.SelectedItem); Request-Rebuild }
+# Preview a theme sound: play the combo's selected wav (a blank selection is a no-op).
+$onPlaySound = {
+  $sel = [string]$this.Tag.combo.SelectedItem
+  if ($sel) { try { (New-Object System.Media.SoundPlayer (Join-Path $script:soundsDir $sel)).Play() } catch {} }
+}
 $onText  = { $f = $this.Tag; Set-ModelValue $script:model $f.path (ConvertTo-ModelValue $f.kind $this.Text); Request-Rebuild }
 # WPF has no built-in colour picker; reuse the WinForms ColorDialog (already loaded). The
 # button's .Tag is its hex TextBox: writing .Text fires TextChanged -> model update + rebuild.
@@ -318,6 +326,20 @@ function New-FieldControl($f) {
       $c.HorizontalAlignment = 'Stretch'; $c.VerticalAlignment = 'Center'
       $c.Tag = $f; $c.Add_SelectionChanged($onCombo); return $c
     }
+    'sound' {
+      $c = New-Object System.Windows.Controls.ComboBox
+      foreach ($o in $f.options) { $c.Items.Add([string]$o) | Out-Null }
+      $c.SelectedItem = [string](Get-ModelValue $script:model $f.path)
+      $c.HorizontalAlignment = 'Stretch'; $c.VerticalAlignment = 'Center'
+      $c.Tag = $f; $c.Add_SelectionChanged($onCombo)
+      $play = New-Object System.Windows.Controls.Button
+      $play.Content = ([char]0x25B6); $play.Width = 28; $play.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
+      $play.Tag = @{ combo = $c }; $play.Add_Click($onPlaySound)
+      $dock = New-Object System.Windows.Controls.DockPanel
+      [System.Windows.Controls.DockPanel]::SetDock($play, 'Right')
+      $dock.Children.Add($play) | Out-Null; $dock.Children.Add($c) | Out-Null
+      return $dock
+    }
     default {   # 'text' and 'number'; hex-colour text fields also get a swatch picker
       $c = New-Object System.Windows.Controls.TextBox
       $c.Text = [string](Get-ModelValue $script:model $f.path); $c.VerticalAlignment = 'Center'
@@ -395,6 +417,8 @@ function Build-Form {
   Add-PairRow 'hero color1' (New-SwatchControl $tbC1) `
               'hero color2' (New-SwatchControl $tbC2)
   Add-Row 'card' (New-FieldControl (& $find 'card'))
+  Add-Row 'sound done'  (New-FieldControl (& $find 'sound.done'))
+  Add-Row 'sound input' (New-FieldControl (& $find 'sound.needs-input'))
   foreach ($f in $fields | Where-Object { $_.label -like 'scene.*' }) { Add-FieldRow $f }
 }
 Build-Form

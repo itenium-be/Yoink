@@ -20,6 +20,10 @@ check "9 themes"              "[[ \"\$(jq '.themes|length' '$F')\" == '9' ]]"
 check "unicorn theme"         "jq -e '.themes.unicorn' '$F' >/dev/null"
 check "needs-input body array" "jq -e '.events[\"needs-input\"].body|type==\"array\"' '$F' >/dev/null"
 check "done body array"       "jq -e '.events.done.body|type==\"array\"' '$F' >/dev/null"
+check "done sound is boolean"        "[[ \"\$(jq -r '.events.done.sound|type' '$F')\" == 'boolean' ]]"
+check "needs-input sound is boolean" "[[ \"\$(jq -r '.events[\"needs-input\"].sound|type' '$F')\" == 'boolean' ]]"
+check "every theme has sound pair" \
+  "[[ \"\$(jq '[.themes[]|select(.sound.done != null and .sound[\"needs-input\"] != null)]|length' '$F')\" == '9' ]]"
 check "every theme has hero/gradient/rim/card" \
   "[[ \"\$(jq '[.themes[]|select(.hero and .gradient and .rim and .card)]|length' '$F')\" == '9' ]]"
 check "ocean has waves scene" "[[ \"\$(jq -r '.themes.ocean.scene.kind // empty' '$F')\" == 'waves' ]]"
@@ -35,6 +39,8 @@ check "matrix hero has emoji + fixed fill" "jq -e '.themes.matrix.hero | .emoji 
 # scene has additionalProperties:false, so every flag the theme uses must be
 # defined and "unicorn" must be an allowed kind.
 SCHEMA="$ROOT/settings.schema.json"
+check "schema event sound is boolean" "[[ \"\$(jq -r '.definitions.event.properties.sound.type' '$SCHEMA')\" == 'boolean' ]]"
+check "schema theme sound is object"  "[[ \"\$(jq -r '.definitions.theme.properties.sound.type' '$SCHEMA')\" == 'object' ]]"
 check "unicorn has unicorn scene"        "[[ \"\$(jq -r '.themes.unicorn.scene.kind // empty' '$F')\" == 'unicorn' ]]"
 check "schema scene.kind allows unicorn" "jq -e '.definitions.scene.properties.kind.enum|index(\"unicorn\")' '$SCHEMA' >/dev/null"
 check "schema defines unicorn scene flags" \

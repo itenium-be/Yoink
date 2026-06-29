@@ -34,12 +34,9 @@ HWND=0
 REC="$SESS_DIR/$SID.json"
 [[ -f "$REC" ]] && HWND="$(jq -r '.hwnd // 0' "$REC" 2>/dev/null)"
 
-if [[ "$EVENT" == "needs-input" ]]; then SND="$NOTIFY_DIR/sounds/needs-input.wav";
-else EVENT="done"; SND="$NOTIFY_DIR/sounds/done.wav"; fi
+[[ "$EVENT" == "needs-input" ]] || EVENT="done"
 
 PS_SCRIPT="${CLAUDE_NOTIFY_PS_SHOW:-$(wslpath -w "$NOTIFY_DIR/show-notification.ps1" 2>/dev/null)}"
-WSND=""
-[[ -f "$SND" ]] && WSND="$(wslpath -w "$SND" 2>/dev/null)"
 
 # Gather context tokens ({{message}}, {{branch}}, {{last_prompt}}, ...) for the body templates.
 CTX="$SESS_DIR/${SID:-nosid}.ctx.json"
@@ -47,6 +44,6 @@ printf '%s' "$INPUT" | bash "$NOTIFY_DIR/notify-context.sh" "$EVENT" > "$CTX" 2>
 WCTX="$(wslpath -w "$CTX" 2>/dev/null)"
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" \
-  -Hwnd "$HWND" -Folder "$FOLDER" -Event "$EVENT" -Sound "$WSND" -Context "$WCTX" \
+  -Hwnd "$HWND" -Folder "$FOLDER" -Event "$EVENT" -Context "$WCTX" \
   >>"$LOG" 2>&1 &
 exit 0

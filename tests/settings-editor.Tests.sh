@@ -24,6 +24,9 @@ OUT="$(run -SettingsPath "$(wslpath -w "$CFG")" -DryRun)"
 check "lists activeTheme dropdown"  "grep -q 'dropdown activeTheme' <<<\"\$OUT\""
 check "lists event label field"     "grep -q 'text events.done.label' <<<\"\$OUT\""
 check "lists scene petals checkbox" "grep -q 'checkbox themes.sakura.scene.petals' <<<\"\$OUT\""
+check "lists event sound checkbox"   "grep -q 'checkbox events.done.sound' <<<\"\$OUT\""
+check "lists theme sound.done"       "grep -q 'sound themes.sakura.sound.done' <<<\"\$OUT\""
+check "lists theme sound.needs-input" "grep -q 'sound themes.sakura.sound.needs-input' <<<\"\$OUT\""
 
 run -SettingsPath "$(wslpath -w "$CFG")" -DryRun -SaveTo "$(wslpath -w "$TMP/out.json")" >/dev/null
 check "save writes valid json" "jq -e . '$TMP/out.json' >/dev/null"
