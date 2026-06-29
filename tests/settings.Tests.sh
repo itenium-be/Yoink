@@ -18,5 +18,9 @@ check "every theme has hero/gradient/rim/card" \
   "[[ \"\$(jq '[.themes[]|select(.hero and .gradient and .rim and .card)]|length' '$F')\" == '9' ]]"
 check "ocean has waves scene" "[[ \"\$(jq -r '.themes.ocean.scene.kind // empty' '$F')\" == 'waves' ]]"
 check "ocean scene has sky+sun+clouds" "[[ \"\$(jq -rc '[.themes.ocean.scene.sky,.themes.ocean.scene.sun,.themes.ocean.scene.clouds]' '$F')\" == '[true,true,true]' ]]"
+check "cosmic has space scene" "[[ \"\$(jq -r '.themes.cosmic.scene.kind // empty' '$F')\" == 'space' ]]"
+check "cosmic scene has stars+nebula+comets" "[[ \"\$(jq -rc '[.themes.cosmic.scene.stars,.themes.cosmic.scene.nebula,.themes.cosmic.scene.comets]' '$F')\" == '[true,true,true]' ]]"
+check "matrix has matrix scene" "[[ \"\$(jq -r '.themes.matrix.scene.kind // empty' '$F')\" == 'matrix' ]]"
+check "matrix scene has streaks on" "[[ \"\$(jq -r '.themes.matrix.scene.streaks' '$F')\" == 'true' ]]"
 
 exit $fail

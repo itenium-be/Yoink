@@ -22,6 +22,8 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\mascot-confetti.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-flag-waver.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-waves.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-space.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-matrix.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -143,9 +145,19 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     sky     = [bool](Get-Prop $theme.scene 'sky')
     sun     = [bool](Get-Prop $theme.scene 'sun')
     clouds  = [bool](Get-Prop $theme.scene 'clouds')
+    stars   = [bool](Get-Prop $theme.scene 'stars')
+    nebula  = [bool](Get-Prop $theme.scene 'nebula')
+    comets  = [bool](Get-Prop $theme.scene 'comets')
+    streaks = [bool](Get-Prop $theme.scene 'streaks')
+    density = (Coalesce (Get-Prop $theme.scene 'density') 0.85)
+    glyphs  = [string](Coalesce (Get-Prop $theme.scene 'glyphs') 'katakana')
   }
 }
-$sceneKinds = @{ waves = { param($b, $c) Start-Waves $b $c } }
+$sceneKinds = @{
+  waves  = { param($b, $c) Start-Waves $b $c }
+  space  = { param($b, $c) Start-Space $b $c }
+  matrix = { param($b, $c) Start-Matrix $b $c }
+}
 $win.Add_Loaded({
   if ($sceneCfg) {
     $fn = $sceneKinds[$sceneCfg.kind]

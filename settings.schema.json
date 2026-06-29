@@ -150,17 +150,23 @@
       "required": ["kind"],
       "description": "Optional animated backdrop for the theme.",
       "properties": {
-        "kind": { "enum": ["waves"], "description": "Scenery renderer. Currently only \"waves\"." },
+        "kind": { "enum": ["waves", "space", "matrix"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic) or \"matrix\" (digital rain)." },
         "colors": {
           "type": "array",
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
           "items": { "$ref": "#/definitions/hexColor" }
         },
-        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Wave layer opacity (default 0.22)." },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Layer opacity (waves default 0.22, matrix default 0.9)." },
         "speed": { "type": "number", "exclusiveMinimum": 0, "description": "Animation speed multiplier (default 1.0)." },
-        "sky": { "type": "boolean", "description": "Draw a sky+sea gradient above the waves." },
-        "sun": { "type": "boolean", "description": "Draw a glowing sun in the sky (needs \"sky\")." },
-        "clouds": { "type": "boolean", "description": "Draw drifting clouds in the sky (needs \"sky\")." }
+        "sky": { "type": "boolean", "description": "waves: draw a sky+sea gradient above the waves." },
+        "sun": { "type": "boolean", "description": "waves: draw a glowing sun in the sky (needs \"sky\")." },
+        "clouds": { "type": "boolean", "description": "waves: draw drifting clouds in the sky (needs \"sky\")." },
+        "stars": { "type": "boolean", "description": "space: draw a twinkling starfield." },
+        "nebula": { "type": "boolean", "description": "space: draw soft drifting nebula glow." },
+        "comets": { "type": "boolean", "description": "space: draw occasional shooting-star streaks." },
+        "density": { "type": "number", "minimum": 0, "maximum": 1, "description": "matrix: fraction of columns that carry a glyph stream (default 0.85)." },
+        "glyphs": { "enum": ["katakana", "latin", "digits", "binary", "mixed"], "description": "matrix: glyph repertoire for the rain (default \"katakana\")." },
+        "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." }
       }
     }
   }
