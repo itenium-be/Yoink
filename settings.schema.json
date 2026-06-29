@@ -170,7 +170,7 @@
       "required": ["kind"],
       "description": "Optional animated backdrop for the theme.",
       "properties": {
-        "kind": { "enum": ["waves", "space", "matrix"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic) or \"matrix\" (digital rain)." },
+        "kind": { "enum": ["waves", "space", "matrix", "unicorn"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain) or \"unicorn\" (rainbow / aurora / glitter / pastel)." },
         "colors": {
           "type": "array",
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
@@ -186,7 +186,12 @@
         "comets": { "type": "boolean", "description": "space: draw occasional shooting-star streaks." },
         "density": { "type": "number", "minimum": 0, "maximum": 1, "description": "matrix: fraction of columns that carry a glyph stream (default 0.85)." },
         "glyphs": { "enum": ["katakana", "latin", "digits", "binary", "mixed"], "description": "matrix: glyph repertoire for the rain (default \"katakana\")." },
-        "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." }
+        "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." },
+        "sparkles": { "type": "boolean", "description": "unicorn: scatter twinkling sparkles across the card." },
+        "rainbow": { "type": "boolean", "description": "unicorn: draw the arching rainbow bands." },
+        "aurora": { "type": "boolean", "description": "unicorn: draw a soft drifting aurora glow (night motif)." },
+        "glitter": { "type": "boolean", "description": "unicorn: draw a shimmering glitter dust layer." },
+        "shootingStar": { "type": "boolean", "description": "unicorn: draw occasional shooting-star streaks." }
       }
     }
   }

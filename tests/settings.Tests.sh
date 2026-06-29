@@ -31,4 +31,13 @@ check "matrix scene streaks is boolean" "[[ \"\$(jq -r '.themes.matrix.scene.str
 check "matrix hero uses object form" "[[ \"\$(jq -r '.themes.matrix.hero|type' '$F')\" == 'object' ]]"
 check "matrix hero has emoji + fixed fill" "jq -e '.themes.matrix.hero | .emoji and (.color // .colors)' '$F' >/dev/null"
 
+# Scene config is wired in the schema so the unicorn theme validates against it.
+# scene has additionalProperties:false, so every flag the theme uses must be
+# defined and "unicorn" must be an allowed kind.
+SCHEMA="$ROOT/settings.schema.json"
+check "unicorn has unicorn scene"        "[[ \"\$(jq -r '.themes.unicorn.scene.kind // empty' '$F')\" == 'unicorn' ]]"
+check "schema scene.kind allows unicorn" "jq -e '.definitions.scene.properties.kind.enum|index(\"unicorn\")' '$SCHEMA' >/dev/null"
+check "schema defines unicorn scene flags" \
+  "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"aurora\"),has(\"rainbow\"),has(\"glitter\"),has(\"sparkles\"),has(\"shootingStar\")]' '$SCHEMA')\" == '[true,true,true,true,true]' ]]"
+
 exit $fail

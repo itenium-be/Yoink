@@ -1,5 +1,5 @@
 {
-  "activeTheme": "sakura",
+  "activeTheme": "unicorn",
   "events": {
     "needs-input": {
       "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": "",
