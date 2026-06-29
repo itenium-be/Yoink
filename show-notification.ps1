@@ -106,6 +106,9 @@ foreach ($e in 'gym', 'horizontal-jump') {
 
 # --- Mascot choreography: look around -> jump onto the top edge -> celebrate ---
 # Started from Loaded because slot/card positions are known only after layout.
+# NB: plain scriptblock, not .GetNewClosure() - the closure form rebinds to a module
+# scope that can't see the script-scoped phase functions when the script is launched
+# via the call operator (.\show-notification.ps1) rather than -File.
 $win.Add_Loaded({
   Start-JumpPrep $box {
     Start-Jump $box {
@@ -114,7 +117,7 @@ $win.Add_Loaded({
       }
     }
   }
-}.GetNewClosure())
+})
 
 # --- Click to focus the originating terminal window ---
 $win.Add_MouseLeftButtonDown({
