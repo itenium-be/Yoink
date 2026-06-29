@@ -34,6 +34,8 @@ function Start-Fireworks($canvas, $colors) {
 # whether it lives in the notification Window or is hosted inside the settings editor.
 function Initialize-NotificationCard($box) {
   $card = $box.Card
+  # Round-clip the card so edge-bleeding content follows the corner radius (a Border
+  # with CornerRadius does NOT clip its children to the rounded shape on its own).
   if ($card) {
     $cg = New-Object System.Windows.Media.RectangleGeometry
     $cg.Rect = New-Object System.Windows.Rect 0, 0, $card.ActualWidth, $card.ActualHeight
@@ -63,6 +65,8 @@ function Initialize-NotificationCard($box) {
     $full = $ft.WidthIncludingTrailingWhitespace
     $tb.ToolTip = $tb.Text
 
+    # Clip a viewport at the current width, let the text run full-width inside it, and
+    # ping-pong a TranslateTransform so the hidden tail scrolls into view.
     $panel = $tb.Parent
     $idx = $panel.Children.IndexOf($tb)
     $vp = New-Object System.Windows.Controls.Grid
@@ -79,7 +83,7 @@ function Initialize-NotificationCard($box) {
     $panel.Children.Insert($idx, $vp)
 
     $travel = -($full - $avail + 6)
-    $scroll = [int]([Math]::Abs($travel) * 12)
+    $scroll = [int]([Math]::Abs($travel) * 12)   # ~12ms per px
     $kf = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
     $kf.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
     $stops = @(@(0, 0), @(1500, 0), @((1500 + $scroll), $travel), @((3000 + $scroll), $travel), @((3000 + 2 * $scroll), 0))
@@ -243,13 +247,11 @@ function New-NotificationBox {
     $footerPanel.Children.Add($pill) | Out-Null
   }
 
-  $bodyTbsLocal = $bodyTbs
-
   $box = @{
     Win = $win; Card = $win.FindName('card'); Slot = $win.FindName('slot')
     Overlay = $win.FindName('overlay'); Mascot = $win.FindName('mascot')
     Scene = $win.FindName('scene'); RimBrush = $win.FindName('rimBrush'); Fx = $win.FindName('fx')
-    BodyTbs = $bodyTbsLocal; Theme = $Theme; Ev = $Ev
+    BodyTbs = $bodyTbs; Theme = $Theme; Ev = $Ev
     Event = $Event
   }
 
