@@ -4,7 +4,9 @@ param(
   [string]$Event = "done",
   [string]$Sound = "",
   [int]$Seconds = 0,   # 0 = stay until clicked or the target terminal is focused
-  [switch]$DryRun
+  [string]$Context = "",
+  [switch]$DryRun,
+  [switch]$EmitXaml
 )
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
@@ -19,6 +21,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\mascot-gym.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-confetti.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-flag-waver.ps1')
+. (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
 $screen = $null
@@ -33,6 +36,24 @@ if ($DryRun) {
   }
   if (-not (Test-Path (Join-Path $PSScriptRoot 'mascots\anchor.json'))) { Write-Error "missing anchor.json"; exit 1 }
   Write-Output ("screen={0} wa={1},{2},{3}x{4}" -f $screen.DeviceName,$wa.Left,$wa.Top,$wa.Width,$wa.Height); return
+}
+
+# --- Resolve themed config (theme + event + body) ---
+$cfg   = Get-NotifyConfig $PSScriptRoot
+$theme = Resolve-Theme $cfg (Resolve-ThemeName $cfg)
+$ev    = Resolve-Event $cfg $Event
+$ctx   = @{ folder = $Folder; event = $Event }
+if ($Context -and (Test-Path $Context)) {
+  try {
+    $cj = Get-Content -Raw -Encoding UTF8 $Context | ConvertFrom-Json
+    foreach ($p in $cj.PSObject.Properties) { $ctx[$p.Name] = [string]$p.Value }
+  } catch {}
+}
+$bodyLines = @(Resolve-BodyLines $ev.body $ctx)
+if ($EmitXaml) {
+  # Emoji come from settings.json as UTF8; force UTF8 stdout so they survive the pipe.
+  [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+  New-NotificationBox -Event $Event -Theme $theme -Ev $ev -BodyLines $bodyLines -WorkArea $wa -EmitXaml; return
 }
 
 # --- One card per monitor: evict any predecessor still showing on this screen ---
@@ -60,12 +81,12 @@ if ($Hwnd -eq 0 -and $Seconds -le 0) { $Seconds = 15 }
 # --- Sound ---
 try {
   if ($Sound -and (Test-Path $Sound)) { (New-Object System.Media.SoundPlayer $Sound).Play() }
-  elseif ($Event -eq 'needs-input') { [System.Media.SystemSounds]::Exclamation.Play() }
+  elseif ($ev.sound -eq 'exclamation') { [System.Media.SystemSounds]::Exclamation.Play() }
   else { [System.Media.SystemSounds]::Asterisk.Play() }
 } catch {}
 
 # --- Build the window ---
-$box = New-NotificationBox -Event $Event -Folder $Folder -WorkArea $wa
+$box = New-NotificationBox -Event $Event -Theme $theme -Ev $ev -BodyLines $bodyLines -WorkArea $wa
 $win = $box.Win
 
 # Normalized frames share one canvas; the creature sits at a fixed anchor inside it

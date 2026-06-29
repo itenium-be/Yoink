@@ -1,0 +1,77 @@
+{
+  "activeTheme": "unicorn",
+  "events": {
+    "needs-input": {
+      "label": "Needs you", "accent": "#FF7A18", "indicator": "👋", "mascot": "flag", "sound": "exclamation",
+      "body": [
+        { "text": "{{message}}",            "style": "headline" },
+        { "text": "{{folder}} · {{branch}}", "style": "sub" },
+        { "text": "{{last_prompt}}",         "style": "muted" }
+      ]
+    },
+    "done": {
+      "label": "Done!", "accent": "#22C55E", "indicator": "fireworks", "mascot": "confetti", "sound": "asterisk",
+      "body": [
+        { "text": "{{last_assistant}}",       "style": "headline" },
+        { "text": "{{folder}} · {{branch}}",   "style": "sub" },
+        { "text": "{{agents}} agents running", "style": "muted" }
+      ]
+    }
+  },
+  "themes": {
+    "unicorn": {
+      "hero": "🦄",
+      "gradient": ["#FF5F6D 0", "#FFC371 0.28", "#3CFFB0 0.5", "#36D1DC 0.72", "#A56BFF 1"],
+      "rim": ["#7C3AED 0", "#2563EB 0.17", "#06B6D4 0.34", "#22C55E 0.5", "#EAB308 0.67", "#F97316 0.84", "#EC4899 1"],
+      "card": "#18181B"
+    },
+    "cosmic": {
+      "hero": "🚀",
+      "gradient": ["#3A1C71 0", "#5B2A86 0.3", "#7B2FF7 0.55", "#2C7DFA 0.8", "#22D3EE 1"],
+      "rim": ["#1E1B4B 0", "#4338CA 0.25", "#7C3AED 0.5", "#2563EB 0.75", "#06B6D4 1"],
+      "card": "#0B0B1A"
+    },
+    "ocean": {
+      "hero": "🐳",
+      "gradient": ["#0EA5E9 0", "#22D3EE 0.3", "#2DD4BF 0.6", "#14B8A6 0.8", "#0891B2 1"],
+      "rim": ["#0C4A6E 0", "#0369A1 0.25", "#0891B2 0.5", "#06B6D4 0.75", "#14B8A6 1"],
+      "card": "#0A1620"
+    },
+    "sakura": {
+      "hero": "🌸",
+      "gradient": ["#FF8FB1 0", "#FFB7C5 0.3", "#FBC2EB 0.6", "#E0AAFF 0.85", "#C8A2FF 1"],
+      "rim": ["#DB2777 0", "#EC4899 0.25", "#F472B6 0.5", "#E879F9 0.75", "#C084FC 1"],
+      "card": "#1A1620"
+    },
+    "matrix": {
+      "hero": "👾",
+      "gradient": ["#00FF41 0", "#22C55E 0.35", "#16A34A 0.6", "#00C853 0.8", "#39FF14 1"],
+      "rim": ["#052E16 0", "#14532D 0.25", "#16A34A 0.5", "#22C55E 0.75", "#4ADE80 1"],
+      "card": "#050A05"
+    },
+    "dragon": {
+      "hero": "🐉",
+      "gradient": ["#7F1D1D 0", "#DC2626 0.3", "#F97316 0.6", "#FBBF24 0.85", "#FDE047 1"],
+      "rim": ["#450A0A 0", "#991B1B 0.25", "#DC2626 0.5", "#EA580C 0.75", "#F59E0B 1"],
+      "card": "#1A0F0A"
+    },
+    "vaporwave": {
+      "hero": "🌴",
+      "gradient": ["#FF6AD5 0", "#C774E8 0.3", "#AD8CFF 0.55", "#8795E8 0.8", "#94D0FF 1"],
+      "rim": ["#FF71CE 0", "#B967FF 0.25", "#01CDFE 0.5", "#05FFA1 0.75", "#FFFB96 1"],
+      "card": "#160F1F"
+    },
+    "robot": {
+      "hero": "🤖",
+      "gradient": ["#94A3B8 0", "#64748B 0.3", "#38BDF8 0.6", "#0EA5E9 0.8", "#22D3EE 1"],
+      "rim": ["#1E293B 0", "#334155 0.25", "#475569 0.5", "#0EA5E9 0.75", "#38BDF8 1"],
+      "card": "#0E141B"
+    },
+    "spooky": {
+      "hero": "🎃",
+      "gradient": ["#F97316 0", "#EA580C 0.3", "#7C2D12 0.55", "#6B21A8 0.8", "#4C1D95 1"],
+      "rim": ["#7C2D12 0", "#9A3412 0.25", "#EA580C 0.5", "#6B21A8 0.75", "#4C1D95 1"],
+      "card": "#100A14"
+    }
+  }
+}
