@@ -5,3 +5,4 @@ sessions/
 screens/
 tools/__pycache__/
 .playwright-mcp/
+capture/
