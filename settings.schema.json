@@ -170,7 +170,7 @@
       "required": ["kind"],
       "description": "Optional animated backdrop for the theme.",
       "properties": {
-        "kind": { "enum": ["waves", "space", "matrix", "sakura", "unicorn", "spooky"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain), \"sakura\" (cherry-blossom petals), \"unicorn\" (rainbow / aurora / glitter / pastel) or \"spooky\" (Halloween / haunted)." },
+        "kind": { "enum": ["waves", "space", "matrix", "sakura", "unicorn", "spooky", "dragon"], "description": "Scenery renderer: \"waves\" (ocean), \"space\" (cosmic), \"matrix\" (digital rain), \"sakura\" (cherry-blossom petals), \"unicorn\" (rainbow / aurora / glitter / pastel), \"spooky\" (Halloween / haunted) or \"dragon\" (embers / fire / treasure)." },
         "colors": {
           "type": "array",
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
@@ -188,7 +188,7 @@
         "glyphs": { "enum": ["katakana", "latin", "digits", "binary", "mixed"], "description": "matrix: glyph repertoire for the rain (default \"katakana\")." },
         "streaks": { "type": "boolean", "description": "matrix: draw soft vertical glow bands behind the rain." },
         "petals": { "type": "boolean", "description": "sakura: draw falling cherry-blossom petals (default true)." },
-        "count": { "type": "integer", "minimum": 1, "description": "sakura: number of background petals (default 22)." },
+        "count": { "type": "integer", "minimum": 1, "description": "sakura: number of background petals (default 22); dragon: number of rising embers (default 30)." },
         "bloom": { "type": "boolean", "description": "sakura: draw soft drifting pink/lilac bokeh glows." },
         "branch": { "type": "boolean", "description": "sakura: draw a blossom branch in the top-left corner." },
         "parallax": { "type": "boolean", "description": "sakura: add a few large fast foreground petals for depth." },
@@ -204,7 +204,12 @@
         "ghosts": { "type": "boolean", "description": "spooky: draw pale ghost wisps rising and fading." },
         "bats": { "type": "boolean", "description": "spooky: draw small bat silhouettes flapping across." },
         "eyes": { "type": "boolean", "description": "spooky: draw pairs of glowing eyes that blink in the dark." },
-        "lightning": { "type": "boolean", "description": "spooky: draw occasional full-card lightning flashes." }
+        "lightning": { "type": "boolean", "description": "spooky: draw occasional full-card lightning flashes." },
+        "embers": { "type": "boolean", "description": "dragon: draw rising glowing ember sparks (default true)." },
+        "glow": { "type": "boolean", "description": "dragon: draw warm fire glow rising from the bottom edge." },
+        "bottom": { "enum": ["lava", "treasure", "none"], "description": "dragon: bottom layer — \"lava\" (molten pool), \"treasure\" (gold hoard) or \"none\" (default \"lava\"). Mutually exclusive." },
+        "smoke": { "type": "boolean", "description": "dragon: draw dark smoke wisps rising above the bottom layer." },
+        "volcano": { "type": "boolean", "description": "dragon: draw a distant volcano mountain backdrop (cone, crater glow, ejected sparks)." }
       }
     }
   }

@@ -27,6 +27,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-sakura.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-unicorn.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-spooky.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-dragon.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -172,6 +173,11 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     bats         = [bool](Get-Prop $theme.scene 'bats')
     eyes         = [bool](Get-Prop $theme.scene 'eyes')
     lightning    = [bool](Get-Prop $theme.scene 'lightning')
+    embers       = [bool](Coalesce (Get-Prop $theme.scene 'embers') $true)
+    glow         = [bool](Get-Prop $theme.scene 'glow')
+    bottom       = [string](Coalesce (Get-Prop $theme.scene 'bottom') 'lava')
+    smoke        = [bool](Get-Prop $theme.scene 'smoke')
+    volcano      = [bool](Get-Prop $theme.scene 'volcano')
   }
 }
 $sceneKinds = @{
@@ -181,6 +187,7 @@ $sceneKinds = @{
   sakura  = { param($b, $c) Start-Sakura $b $c }
   unicorn = { param($b, $c) Start-Unicorn $b $c }
   spooky  = { param($b, $c) Start-Spooky $b $c }
+  dragon  = { param($b, $c) Start-Dragon $b $c }
 }
 $win.Add_Loaded({
   if ($sceneCfg) {
