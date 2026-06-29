@@ -70,7 +70,56 @@ function Get-SchemaEnums([string]$SchemaPath) {
     'mascot.end'   = @(Get-ModelValue $schema @('definitions','event','properties','mascot','properties','end','enum'))
     'sound'        = @(Get-ModelValue $schema @('definitions','event','properties','sound','enum'))
     'scene.glyphs' = @(Get-ModelValue $schema @('definitions','scene','properties','glyphs','enum'))
+    'scene.bottom' = @(Get-ModelValue $schema @('definitions','scene','properties','bottom','enum'))
+    'scene.base'   = @(Get-ModelValue $schema @('definitions','scene','properties','base','enum'))
   }
+}
+
+# Normalize a raw hero value (bare emoji string or { emoji, color | colors }) to
+# @{ emoji; colors=@() }. Mirrors Resolve-Theme: "colors" wins, a single "color"
+# becomes a one-element list, a bare string carries no colours.
+function Get-HeroParts($hero) {
+  if ($hero -is [string]) { return @{ emoji = $hero; colors = @() } }
+  if ($hero -is [System.Collections.IDictionary]) {
+    $cols = @($hero['colors'])
+    if (-not $cols -or $cols.Count -eq 0) {
+      $one = $hero['color']
+      $cols = if ($one) { @($one) } else { @() }
+    }
+    return @{ emoji = [string]$hero['emoji']; colors = @($cols) }
+  }
+  @{ emoji = ''; colors = @() }
+}
+
+# Inverse of Get-HeroParts for the editor: no colours -> the bare emoji string (the
+# common case stays clean); any colours -> the { emoji, colors } object form. Blank
+# colour slots are dropped so an empty swatch can't produce colors:[""].
+function Build-HeroValue([string]$emoji, $colors) {
+  $cols = @(@($colors) | Where-Object { $_ -and "$_".Trim() -ne '' } | ForEach-Object { "$_".Trim() })
+  if ($cols.Count -eq 0) { return $emoji }
+  [ordered]@{ emoji = $emoji; colors = $cols }
+}
+
+# Emoji from a Unicode code point. Emoji literals in a .ps1 are mangled under Windows
+# PowerShell 5.1: with no BOM the source is read as the ANSI code page, and bytes like
+# 0x92 in 💊 terminate the string literal. Code points keep callers encoding-independent.
+function Get-Emoji([int]$codePoint) { [char]::ConvertFromUtf32($codePoint) }
+
+# Curated hero options per theme (emoji + fixed fill colours), shown as a "preset"
+# dropdown in the editor. Only themes listed here get the dropdown.
+function Get-HeroPresets([string]$theme) {
+  $presets = @{
+    matrix = @(
+      @{ label = 'rabbit'; emoji = (Get-Emoji 0x1F407); colors = @('white') }
+      @{ label = 'pill';   emoji = (Get-Emoji 0x1F48A); colors = @('#EF4444', '#3B82F6') }
+    )
+    spooky = @(
+      @{ label = 'pumpkin'; emoji = (Get-Emoji 0x1F383); colors = @('#FFB23A', '#EA5A0C') }
+      @{ label = 'ghost';   emoji = (Get-Emoji 0x1F47B); colors = @('#E8E8F2') }
+      @{ label = 'skull';   emoji = (Get-Emoji 0x1F480); colors = @('#EDEAD6') }
+    )
+  }
+  if ($presets.ContainsKey($theme)) { @($presets[$theme]) } else { @() }
 }
 
 # Ordered list of form-field descriptors for the selected event + theme.
@@ -93,7 +142,7 @@ function Get-EditorFields($model, $enums, [string]$Event, [string]$Theme) {
   Add-Field $fields ($ep + 'sound')               'sound'       'dropdown' $enums['sound']
 
   $tp = @('themes', $Theme)
-  Add-Field $fields ($tp + 'hero') 'hero' 'text' @()
+  Add-Field $fields ($tp + 'hero') 'hero' 'hero' @()
   Add-Field $fields ($tp + 'card') 'card' 'text' @()
 
   $scene = Get-ModelValue $model ($tp + 'scene')
@@ -101,9 +150,11 @@ function Get-EditorFields($model, $enums, [string]$Event, [string]$Theme) {
     foreach ($k in @($scene.Keys)) {
       if ($k -eq 'kind' -or $k -eq 'colors') { continue }   # readonly / array (deferred)
       $sp = $tp + @('scene', $k)
-      if ($k -eq 'glyphs')           { Add-Field $fields $sp "scene.$k" 'dropdown' $enums['scene.glyphs'] }
-      elseif ($scene[$k] -is [bool]) { Add-Field $fields $sp "scene.$k" 'checkbox' @() }
-      else                           { Add-Field $fields $sp "scene.$k" 'number' @() }
+      $label = "scene.$k"
+      $enum = if ($enums.ContainsKey($label)) { @($enums[$label] | Where-Object { $_ }) } else { @() }
+      if ($enum.Count)               { Add-Field $fields $sp $label 'dropdown' $enum }
+      elseif ($scene[$k] -is [bool]) { Add-Field $fields $sp $label 'checkbox' @() }
+      else                           { Add-Field $fields $sp $label 'number' @() }
     }
   }
   $fields

@@ -144,6 +144,40 @@ $onTheme = {
   if ($sel -ne 'random' -and ($script:themeNames -contains $sel)) { $script:selectedTheme = $sel }
   Build-Form; Request-Rebuild
 }
+# Hero is edited by three textboxes (emoji + two colour swatches) sharing a context via
+# .Tag; any edit reassembles the whole value (bare string when no colours, else
+# { emoji, colors }).
+$onHero = {
+  $h = $this.Tag
+  Set-ModelValue $script:model $h.path (Build-HeroValue $h.emoji.Text @($h.col1.Text, $h.col2.Text))
+  Request-Rebuild
+}
+# Preset writes a full curated hero value, then rebuilds the form so the emoji/colour
+# controls re-seed from it (a plain rebuild would leave their text stale).
+$onPreset = {
+  $t = $this.Tag
+  $p = $t.presets | Where-Object { $_.label -eq [string]$this.SelectedItem } | Select-Object -First 1
+  if ($p) { Set-ModelValue $script:model $t.path (Build-HeroValue $p.emoji $p.colors); Build-Form; Request-Rebuild }
+}
+# Emoji picker: a button toggles a popup of emoji buttons; picking one writes the target
+# textbox's .Text (firing its TextChanged -> model update) and closes the popup.
+$onEmojiToggle = { $this.Tag.IsOpen = -not $this.Tag.IsOpen }
+$onEmojiPick   = { $t = $this.Tag; $t.tb.Text = [string]$this.Content; $t.pop.IsOpen = $false }
+# Greyed placeholder hint that hides as soon as the textbox has text. Finds its sibling
+# in the wrapping Grid so it needs no .Tag (the textbox's .Tag is its field descriptor).
+$onPlaceholderText = {
+  foreach ($c in $this.Parent.Children) {
+    if ($c -is [System.Windows.Controls.TextBlock]) { $c.Visibility = if ($this.Text) { 'Collapsed' } else { 'Visible' } }
+  }
+}
+# Curated emoji offered by the picker: theme heroes plus common celebration glyphs. Code
+# points, not literals — see Get-Emoji (a .ps1 without a BOM is read as ANSI under Windows
+# PowerShell 5.1, which mangles raw emoji bytes).
+$script:emojiSet = @(
+  0x1F984, 0x1F680, 0x1F433, 0x1F338, 0x1F48A, 0x1F407, 0x1F409, 0x1F334, 0x1F916,
+  0x1F383, 0x1F47B, 0x1F480, 0x1F389, 0x1F386, 0x2728, 0x26A1, 0x1F525, 0x2705,
+  0x2B50, 0x1F4A5, 0x1F3C6, 0x1F308
+) | ForEach-Object { Get-Emoji $_ }
 
 function Add-Row($labelText, $control) {
   $row = New-Object System.Windows.Controls.DockPanel
@@ -156,62 +190,212 @@ function Add-Row($labelText, $control) {
   $script:form.Children.Add($row) | Out-Null
 }
 
-# Build one labelled control for a field descriptor, using the generic value handlers.
-function Add-FieldRow($f) {
+# A half of a 50/50 paired row: a narrow label docked left, the control filling the rest.
+function New-PairHalf($labelText, $control) {
+  $dock = New-Object System.Windows.Controls.DockPanel
+  $lbl = New-Object System.Windows.Controls.TextBlock
+  $lbl.Text = $labelText; $lbl.Width = 78; $lbl.Foreground = (New-Brush '#D1D5DB'); $lbl.VerticalAlignment = 'Center'
+  [System.Windows.Controls.DockPanel]::SetDock($lbl, 'Left')
+  $dock.Children.Add($lbl) | Out-Null
+  $dock.Children.Add($control) | Out-Null
+  $dock
+}
+
+# Two labelled controls side by side, each in a 50%-width column.
+function Add-PairRow($lbl1, $ctrl1, $lbl2, $ctrl2) {
+  $grid = New-Object System.Windows.Controls.Grid
+  $grid.Margin = New-Object System.Windows.Thickness 0, 0, 0, 6
+  foreach ($i in 0, 1) {
+    $cd = New-Object System.Windows.Controls.ColumnDefinition
+    $cd.Width = New-Object System.Windows.GridLength 1, ([System.Windows.GridUnitType]::Star)
+    $grid.ColumnDefinitions.Add($cd)
+  }
+  $h1 = New-PairHalf $lbl1 $ctrl1; $h1.Margin = New-Object System.Windows.Thickness 0, 0, 6, 0
+  $h2 = New-PairHalf $lbl2 $ctrl2; $h2.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
+  [System.Windows.Controls.Grid]::SetColumn($h1, 0); [System.Windows.Controls.Grid]::SetColumn($h2, 1)
+  $grid.Children.Add($h1) | Out-Null; $grid.Children.Add($h2) | Out-Null
+  $script:form.Children.Add($grid) | Out-Null
+}
+
+# A section divider: a centred bold title flanked by hairlines.
+function Add-Separator($title) {
+  $grid = New-Object System.Windows.Controls.Grid
+  $grid.Margin = New-Object System.Windows.Thickness 0, 16, 0, 8
+  foreach ($w in 'Star', 'Auto', 'Star') {
+    $cd = New-Object System.Windows.Controls.ColumnDefinition
+    $cd.Width = if ($w -eq 'Auto') { [System.Windows.GridLength]::Auto } else { New-Object System.Windows.GridLength 1, ([System.Windows.GridUnitType]::Star) }
+    $grid.ColumnDefinitions.Add($cd)
+  }
+  foreach ($col in 0, 2) {
+    $line = New-Object System.Windows.Controls.Border
+    $line.Height = 1; $line.Background = New-Brush '#3A3A44'; $line.VerticalAlignment = 'Center'
+    [System.Windows.Controls.Grid]::SetColumn($line, $col); $grid.Children.Add($line) | Out-Null
+  }
+  $txt = New-Object System.Windows.Controls.TextBlock
+  $txt.Text = $title; $txt.Foreground = New-Brush '#9CA3AF'; $txt.FontWeight = 'Bold'
+  $txt.Margin = New-Object System.Windows.Thickness 10, 0, 10, 0
+  [System.Windows.Controls.Grid]::SetColumn($txt, 1); $grid.Children.Add($txt) | Out-Null
+  $script:form.Children.Add($grid) | Out-Null
+}
+
+# A hex TextBox + a square swatch button that opens the colour dialog. The textbox keeps
+# whatever TextChanged handler it was given (generic field value, or the hero assembler).
+function New-SwatchControl($tb) {
+  $tb.HorizontalAlignment = 'Stretch'; $tb.VerticalAlignment = 'Center'
+  $pick = New-Object System.Windows.Controls.Button
+  $pick.Content = ([char]0x25A2); $pick.Width = 28; $pick.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
+  if ($tb.Text -match '^#[0-9A-Fa-f]{6}$') { $pick.Background = New-Brush $tb.Text }
+  $pick.Tag = $tb; $pick.Add_Click($onPick)
+  $dock = New-Object System.Windows.Controls.DockPanel
+  [System.Windows.Controls.DockPanel]::SetDock($pick, 'Right')
+  $dock.Children.Add($pick) | Out-Null
+  $dock.Children.Add($tb) | Out-Null
+  $dock
+}
+
+# An emoji-picker button + its popup grid, bound to write $targetTb. Returned as a
+# zero-footprint Grid so the popup lives in the visual tree without taking layout space.
+function New-EmojiPicker($targetTb) {
+  $btn = New-Object System.Windows.Controls.Button
+  $btn.Content = (Get-Emoji 0x1F600); $btn.Width = 30; $btn.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
+  $pop = New-Object System.Windows.Controls.Primitives.Popup
+  $pop.PlacementTarget = $btn; $pop.Placement = 'Bottom'; $pop.StaysOpen = $false
+  $border = New-Object System.Windows.Controls.Border
+  $border.Background = New-Brush '#1F1F27'; $border.BorderBrush = New-Brush '#3A3A44'
+  $border.BorderThickness = New-Object System.Windows.Thickness 1; $border.Padding = New-Object System.Windows.Thickness 4
+  $wrap = New-Object System.Windows.Controls.WrapPanel; $wrap.Width = 232
+  foreach ($em in $script:emojiSet) {
+    $eb = New-Object System.Windows.Controls.Button
+    $eb.Content = $em; $eb.FontFamily = 'Segoe UI Emoji'; $eb.FontSize = 18
+    $eb.Width = 34; $eb.Height = 34; $eb.Margin = New-Object System.Windows.Thickness 2
+    $eb.Tag = @{ tb = $targetTb; pop = $pop }; $eb.Add_Click($onEmojiPick)
+    $wrap.Children.Add($eb) | Out-Null
+  }
+  $border.Child = $wrap; $pop.Child = $border
+  $btn.Tag = $pop; $btn.Add_Click($onEmojiToggle)
+  $container = New-Object System.Windows.Controls.Grid
+  $container.Children.Add($btn) | Out-Null; $container.Children.Add($pop) | Out-Null
+  $container
+}
+
+# A fill element + an emoji-picker button (writing $targetTb) docked to its right.
+function New-EmojiField($fillElement, $targetTb) {
+  $picker = New-EmojiPicker $targetTb
+  $dock = New-Object System.Windows.Controls.DockPanel
+  [System.Windows.Controls.DockPanel]::SetDock($picker, 'Right')
+  $dock.Children.Add($picker) | Out-Null
+  $dock.Children.Add($fillElement) | Out-Null
+  $dock
+}
+
+# Overlay a greyed hint over an (otherwise stretched) textbox, shown only while empty.
+function New-PlaceholderBox($tb, $hint) {
+  $tb.HorizontalAlignment = 'Stretch'; $tb.VerticalAlignment = 'Center'
+  $tb.Add_TextChanged($onPlaceholderText)
+  $grid = New-Object System.Windows.Controls.Grid
+  $grid.Children.Add($tb) | Out-Null
+  $ph = New-Object System.Windows.Controls.TextBlock
+  $ph.Text = $hint; $ph.Foreground = New-Brush '#6B7280'; $ph.IsHitTestVisible = $false
+  $ph.VerticalAlignment = 'Center'; $ph.Margin = New-Object System.Windows.Thickness 5, 0, 0, 0
+  $ph.Visibility = if ($tb.Text) { 'Collapsed' } else { 'Visible' }
+  $grid.Children.Add($ph) | Out-Null
+  $grid
+}
+
+# Build (but don't place) the wired control for a field descriptor. Returns a stretchable
+# element so it fits both full-width and 50/50 rows.
+function New-FieldControl($f) {
   switch ($f.kind) {
     'checkbox' {
       $c = New-Object System.Windows.Controls.CheckBox
       $c.IsChecked = [bool](Get-ModelValue $script:model $f.path); $c.VerticalAlignment = 'Center'
-      $c.Tag = $f; $c.Add_Click($onCheck)
-      Add-Row $f.label $c
+      $c.Tag = $f; $c.Add_Click($onCheck); return $c
     }
     'dropdown' {
       $c = New-Object System.Windows.Controls.ComboBox
       foreach ($o in $f.options) { $c.Items.Add([string]$o) | Out-Null }
       $c.SelectedItem = [string](Get-ModelValue $script:model $f.path)
-      $c.Tag = $f; $c.Add_SelectionChanged($onCombo)
-      Add-Row $f.label $c
+      $c.HorizontalAlignment = 'Stretch'; $c.VerticalAlignment = 'Center'
+      $c.Tag = $f; $c.Add_SelectionChanged($onCombo); return $c
     }
     default {   # 'text' and 'number'; hex-colour text fields also get a swatch picker
       $c = New-Object System.Windows.Controls.TextBox
-      $c.Text = [string](Get-ModelValue $script:model $f.path); $c.HorizontalAlignment = 'Left'
+      $c.Text = [string](Get-ModelValue $script:model $f.path); $c.VerticalAlignment = 'Center'
       $c.Tag = $f; $c.Add_TextChanged($onText)
-      if ($f.kind -eq 'text' -and $c.Text -match '^#[0-9A-Fa-f]{6}$') {
-        $c.Width = 100
-        $pick = New-Object System.Windows.Controls.Button
-        $pick.Content = 'Pick'; $pick.Width = 56; $pick.Margin = New-Object System.Windows.Thickness 6, 0, 0, 0
-        $pick.Background = New-Brush $c.Text; $pick.Tag = $c; $pick.Add_Click($onPick)
-        $wrap = New-Object System.Windows.Controls.StackPanel; $wrap.Orientation = 'Horizontal'
-        $wrap.Children.Add($c) | Out-Null; $wrap.Children.Add($pick) | Out-Null
-        Add-Row $f.label $wrap
-      } else {
-        $c.Width = 360
-        Add-Row $f.label $c
-      }
+      if ($f.kind -eq 'text' -and $c.Text -match '^#[0-9A-Fa-f]{6}$') { return (New-SwatchControl $c) }
+      $c.HorizontalAlignment = 'Stretch'; return $c
     }
   }
 }
+function Add-FieldRow($f) { Add-Row $f.label (New-FieldControl $f) }
 
-# A reactive dropdown: seed SelectedItem BEFORE attaching the handler so seeding can't fire
-# a spurious rebuild.
-function Add-SelectorRow($labelText, $options, $selected, $handler) {
+# A reactive selector ComboBox: seed SelectedItem BEFORE attaching the handler so seeding
+# can't fire a spurious rebuild.
+function New-SelectorCombo($options, $selected, $handler) {
   $c = New-Object System.Windows.Controls.ComboBox
   foreach ($o in $options) { $c.Items.Add([string]$o) | Out-Null }
   $c.SelectedItem = [string]$selected
+  $c.HorizontalAlignment = 'Stretch'; $c.VerticalAlignment = 'Center'
   $c.Add_SelectionChanged($handler)
-  Add-Row $labelText $c
+  $c
 }
 
-# (Re)populate the form: event selector + event group, then theme selector + theme group.
-# Called on startup and whenever the event/theme selection changes (which changes the fields).
+# A bare textbox wired to the generic value handler (for composite rows that wrap it).
+function New-TextBox($f) {
+  $c = New-Object System.Windows.Controls.TextBox
+  $c.Text = [string](Get-ModelValue $script:model $f.path); $c.VerticalAlignment = 'Center'
+  $c.Tag = $f; $c.Add_TextChanged($onText); $c
+}
+
+# (Re)populate the form. Called on startup and whenever the event/theme selection changes
+# (which changes the field set). Layout: paired 50/50 rows, an emoji picker on the emoji
+# fields, and a Theme separator splitting the event group from the theme group.
 function Build-Form {
   $script:form.Children.Clear()
   $fields = Get-EditorFields $script:model $script:enums $script:selectedEvent $script:selectedTheme
-  Add-SelectorRow 'event' @('done', 'needs-input') $script:selectedEvent $onEvent
-  foreach ($f in $fields | Where-Object { $_.path[0] -eq 'events' }) { Add-FieldRow $f }
-  $themeField = $fields | Where-Object { ($_.path -join '.') -eq 'activeTheme' } | Select-Object -First 1
-  if ($themeField) { Add-SelectorRow $themeField.label $themeField.options (Get-ModelValue $script:model @('activeTheme')) $onTheme }
-  foreach ($f in $fields | Where-Object { $_.path[0] -eq 'themes' }) { Add-FieldRow $f }
+  $find = { param($lbl) $fields | Where-Object { $_.label -eq $lbl } | Select-Object -First 1 }
+
+  # --- Event section ---
+  $evCombo = New-SelectorCombo @('done', 'needs-input') $script:selectedEvent $onEvent
+  $evCombo.Width = 180; $evCombo.HorizontalAlignment = 'Left'
+  Add-Row 'event' $evCombo
+  Add-PairRow 'label'  (New-FieldControl (& $find 'label')) `
+              'accent' (New-FieldControl (& $find 'accent'))
+  $indTb = New-TextBox (& $find 'indicator')
+  Add-Row 'indicator' (New-EmojiField (New-PlaceholderBox $indTb 'fireworks  or an emoji') $indTb)
+  Add-PairRow 'mascot.move' (New-FieldControl (& $find 'mascot.move')) `
+              'mascot.end'  (New-FieldControl (& $find 'mascot.end'))
+  Add-Row 'sound' (New-FieldControl (& $find 'sound'))
+
+  # --- Theme section ---
+  Add-Separator 'Theme'
+  $thCombo = New-SelectorCombo (& $find 'activeTheme').options (Get-ModelValue $script:model @('activeTheme')) $onTheme
+
+  $heroPath = @('themes', $script:selectedTheme, 'hero')
+  $hp = Get-HeroParts (Get-ModelValue $script:model $heroPath)
+  $heroCtx = @{ path = $heroPath }
+  $tbEmoji = New-Object System.Windows.Controls.TextBox; $tbEmoji.Text = [string]$hp.emoji; $tbEmoji.HorizontalAlignment = 'Stretch'; $tbEmoji.VerticalAlignment = 'Center'
+  $tbC1 = New-Object System.Windows.Controls.TextBox; $tbC1.Text = [string]($hp.colors[0]); $tbC1.VerticalAlignment = 'Center'
+  $tbC2 = New-Object System.Windows.Controls.TextBox; $tbC2.Text = [string]($hp.colors[1]); $tbC2.VerticalAlignment = 'Center'
+  $heroCtx.emoji = $tbEmoji; $heroCtx.col1 = $tbC1; $heroCtx.col2 = $tbC2
+  foreach ($tb in $tbEmoji, $tbC1, $tbC2) { $tb.Tag = $heroCtx; $tb.Add_TextChanged($onHero) }
+
+  Add-PairRow 'activeTheme' $thCombo 'hero' (New-EmojiField $tbEmoji $tbEmoji)
+
+  $presets = @(Get-HeroPresets $script:selectedTheme)
+  if ($presets.Count) {
+    $pc = New-Object System.Windows.Controls.ComboBox
+    foreach ($p in $presets) { $pc.Items.Add([string]$p.label) | Out-Null }
+    $pc.HorizontalAlignment = 'Left'; $pc.Width = 200
+    $pc.Tag = @{ path = $heroPath; presets = $presets }
+    $pc.Add_SelectionChanged($onPreset)
+    Add-Row 'preset' $pc
+  }
+
+  Add-PairRow 'hero color1' (New-SwatchControl $tbC1) `
+              'hero color2' (New-SwatchControl $tbC2)
+  Add-Row 'card' (New-FieldControl (& $find 'card'))
+  foreach ($f in $fields | Where-Object { $_.label -like 'scene.*' }) { Add-FieldRow $f }
 }
 Build-Form
 

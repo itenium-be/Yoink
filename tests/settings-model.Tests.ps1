@@ -48,6 +48,8 @@ $enums = Get-SchemaEnums "$PSScriptRoot\..\settings.schema.json"
 Assert-Eq ($enums['mascot.move'] -join ',') 'walk,jump' "schema mascot.move enum"
 Assert-Eq ($enums['mascot.end'] -join ',')  'confetti,gym,flag' "schema mascot.end enum"
 Assert-Eq ($enums['scene.glyphs'] -join ',') 'katakana,latin,digits,binary,mixed' "schema glyphs enum"
+Assert-Eq ($enums['scene.bottom'] -join ',') 'lava,treasure,none' "schema bottom enum"
+Assert-Eq ($enums['scene.base'] -join ',') 'circuit,none' "schema base enum"
 
 # --- Get-EditorFields ---
 $model = [ordered]@{
@@ -55,7 +57,7 @@ $model = [ordered]@{
   events = [ordered]@{ done = [ordered]@{ label='Done!'; mascot=[ordered]@{ move='walk'; end='confetti' } } }
   themes = [ordered]@{
     sakura = [ordered]@{ hero='🌸'; card='#1A1620'; scene=[ordered]@{ kind='sakura'; petals=$true; count=22; glyphs='katakana' } }
-    dragon = [ordered]@{ hero='🐉'; card='#1A0F0A' }
+    dragon = [ordered]@{ hero='🐉'; card='#1A0F0A'; scene=[ordered]@{ kind='dragon'; bottom='lava'; volcano=$false; embers=$true } }
   }
 }
 $fields = Get-EditorFields $model $enums 'done' 'sakura'
@@ -66,10 +68,42 @@ Assert-Eq ($byLabel['label'].path -join '.') 'events.done.label' "event label pa
 Assert-Eq ($byLabel['mascot.move'].path -join '.') 'events.done.mascot.move' "mascot.move path"
 Assert-Eq $byLabel['mascot.move'].kind 'dropdown' "mascot.move dropdown"
 Assert-Eq ($byLabel['hero'].path -join '.') 'themes.sakura.hero' "theme hero path"
+Assert-Eq $byLabel['hero'].kind 'hero' "theme hero is hero kind"
+
+$dfields = Get-EditorFields $model $enums 'done' 'dragon'
+$dByLabel = @{}; foreach ($f in $dfields) { $dByLabel[$f.label] = $f }
+Assert-Eq $dByLabel['scene.bottom'].kind 'dropdown' "scene enum string -> dropdown"
+Assert-Eq ($dByLabel['scene.bottom'].options -join ',') 'lava,treasure,none' "scene.bottom options"
+Assert-Eq $dByLabel['scene.volcano'].kind 'checkbox' "scene bool -> checkbox (volcano)"
 Assert-Eq $byLabel['scene.petals'].kind 'checkbox' "scene bool -> checkbox"
 Assert-Eq $byLabel['scene.count'].kind 'number' "scene number -> number"
 Assert-Eq $byLabel['scene.glyphs'].kind 'dropdown' "scene glyphs -> dropdown"
 Assert-Eq ($fields | Where-Object { $_.label -eq 'scene.kind' }).Count 0 "scene.kind not exposed"
+
+# --- Hero parts: normalize string / {emoji,colors} / {emoji,color} ---
+$uni = Get-Emoji 0x1F984; $pill = Get-Emoji 0x1F48A; $rab = Get-Emoji 0x1F407
+$hpStr = Get-HeroParts $uni
+Assert-Eq $hpStr.emoji $uni "hero string -> emoji"
+Assert-Eq $hpStr.colors.Count 0 "hero string -> no colors"
+$hpObj = Get-HeroParts ([ordered]@{ emoji=$pill; colors=@('#EF4444','#3B82F6') })
+Assert-Eq $hpObj.emoji $pill "hero object -> emoji"
+Assert-Eq ($hpObj.colors -join ',') '#EF4444,#3B82F6' "hero object colors"
+$hpOne = Get-HeroParts ([ordered]@{ emoji=$rab; color='white' })
+Assert-Eq ($hpOne.colors -join ',') 'white' "hero single color -> colors[1]"
+
+# --- Build hero value: no colors -> bare string; colors -> object ---
+Assert-Eq (Build-HeroValue $uni @()) $uni "build hero no colors -> string"
+Assert-Eq (Build-HeroValue $uni @('','  ')) $uni "build hero blank colors -> string"
+$bv = Build-HeroValue $pill @('#EF4444','#3B82F6')
+Assert-Eq ($bv -is [System.Collections.IDictionary]) 'True' "build hero colors -> object"
+Assert-Eq $bv.emoji $pill "build hero object emoji"
+Assert-Eq ($bv.colors -join ',') '#EF4444,#3B82F6' "build hero object colors"
+
+# --- Hero presets: curated per theme; unknown -> empty ---
+$mp = Get-HeroPresets 'matrix'
+Assert-Eq ($mp.label -join ',') 'rabbit,pill' "matrix presets"
+Assert-Eq (($mp | Where-Object label -eq 'pill').colors -join ',') '#EF4444,#3B82F6' "pill preset colors"
+Assert-Eq (Get-HeroPresets 'unicorn').Count 0 "no presets -> empty"
 
 # --- Sample context resolves body/footer non-empty ---
 $ctx = Get-SampleContext
