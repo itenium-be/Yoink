@@ -1,0 +1,122 @@
+# Builds the notification window + card and returns the $box element bag.
+# The mascot lives in an unclipped window-level overlay canvas (top z-index) so
+# it can sit on the card's top edge; the card itself keeps its rounded clip.
+# Sound, flash, click-to-focus, logo-wave and dismissal stay in the orchestrator.
+function New-NotificationBox {
+  param(
+    [string]$Event = 'done',
+    [string]$Folder = '',
+    [System.Drawing.Rectangle]$WorkArea
+  )
+
+  if ($Event -eq 'needs-input') { $statusText = 'Needs you'; $accent = '#FF7A18' }
+  else { $statusText = 'Done!'; $accent = '#22C55E' }
+
+  $xaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        Width="620" Height="330" Opacity="0">
+  <Grid>
+    <!-- Card sits below a transparent headroom strip so the mascot can land on its top edge. -->
+    <Border CornerRadius="24" Margin="14,104,14,14">
+      <Border.Background>
+        <LinearGradientBrush x:Name="rimBrush" StartPoint="0,0" EndPoint="1,1">
+          <GradientStop Color="#7C3AED" Offset="0"/><GradientStop Color="#2563EB" Offset="0.17"/>
+          <GradientStop Color="#06B6D4" Offset="0.34"/><GradientStop Color="#22C55E" Offset="0.5"/>
+          <GradientStop Color="#EAB308" Offset="0.67"/><GradientStop Color="#F97316" Offset="0.84"/>
+          <GradientStop Color="#EC4899" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+      <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.55"/></Border.Effect>
+      <Border x:Name="card" CornerRadius="21" Margin="3" Background="#18181B" ClipToBounds="True">
+        <Grid>
+          <!-- Big rainbow unicorn background, bleeding to the card edges (rounded clip
+               on the card keeps it from spilling onto the rim).
+               VerticalAlignment must stay Stretch: a Rectangle with no Height collapses otherwise. -->
+          <Rectangle x:Name="unicorn" Panel.ZIndex="0" Width="210" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0" Opacity="0.92">
+            <Rectangle.Fill>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#FF5F6D" Offset="0"/><GradientStop Color="#FFC371" Offset="0.28"/>
+                <GradientStop Color="#3CFFB0" Offset="0.5"/><GradientStop Color="#36D1DC" Offset="0.72"/>
+                <GradientStop Color="#A56BFF" Offset="1"/>
+              </LinearGradientBrush>
+            </Rectangle.Fill>
+            <Rectangle.OpacityMask>
+              <VisualBrush Stretch="Uniform">
+                <VisualBrush.Visual>
+                  <TextBlock Text="&#x1F984;" FontSize="190" FontFamily="Segoe UI Emoji"/>
+                </VisualBrush.Visual>
+              </VisualBrush>
+            </Rectangle.OpacityMask>
+          </Rectangle>
+
+          <!-- Content layer, always above the unicorn -->
+          <StackPanel Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="26,0,0,0">
+            <StackPanel Orientation="Horizontal">
+              <!-- Empty spacer: reserves the mascot's resting spot during the looking phase. -->
+              <Grid x:Name="slot" Width="128" Height="110" VerticalAlignment="Center"/>
+              <TextBlock x:Name="status" FontSize="34" FontWeight="Bold" Margin="16,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock x:Name="folder" FontSize="19" Foreground="White" Margin="2,14,0,0" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="click to focus" FontSize="13" Foreground="#999999" Margin="2,8,0,2"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Border>
+
+    <!-- Unclipped overlay: the mascot animates here, free to sit on the card's top edge. -->
+    <Canvas x:Name="overlay" Panel.ZIndex="10" IsHitTestVisible="False">
+      <!-- Height-driven: each phase sets Height so the character matches across
+           phases (frame canvases differ in padding/effects). Width auto-follows. -->
+      <Image x:Name="mascot" Stretch="Uniform" Visibility="Collapsed"
+             RenderOptions.BitmapScalingMode="HighQuality"/>
+    </Canvas>
+  </Grid>
+</Window>
+"@
+
+  $win = [Windows.Markup.XamlReader]::Parse($xaml)
+
+  $st = $win.FindName('status'); $st.Text = $statusText
+  $st.Foreground = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString($accent))
+  $win.FindName('folder').Text = $Folder
+
+  $win.Add_Loaded({
+    # Round-clip the card so edge-bleeding content follows the corner radius (a Border
+    # with CornerRadius does NOT clip its children to the rounded shape on its own).
+    $card = $win.FindName('card')
+    if ($card) {
+      $cg = New-Object System.Windows.Media.RectangleGeometry
+      $cg.Rect = New-Object System.Windows.Rect 0, 0, $card.ActualWidth, $card.ActualHeight
+      $cg.RadiusX = 21; $cg.RadiusY = 21
+      $card.Clip = $cg
+    }
+    $src = [System.Windows.PresentationSource]::FromVisual($win)
+    $sx = $src.CompositionTarget.TransformToDevice.M11
+    $sy = $src.CompositionTarget.TransformToDevice.M22
+    $wpx = $win.ActualWidth * $sx; $hpx = $win.ActualHeight * $sy; $pad = 12 * $sx
+    $win.Left = ($WorkArea.Right  - $wpx - $pad) / $sx
+    $win.Top  = ($WorkArea.Bottom - $hpx - $pad) / $sy
+    $fade = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 1, ([System.Windows.Duration][TimeSpan]::FromMilliseconds(250))
+    $win.BeginAnimation([System.Windows.Window]::OpacityProperty, $fade)
+
+    # Continuously rotate the rainbow rim so the colours travel around the border.
+    $rimBrush = $win.FindName('rimBrush')
+    if ($rimBrush) {
+      $rot = New-Object System.Windows.Media.RotateTransform
+      $rot.CenterX = 0.5; $rot.CenterY = 0.5
+      $rimBrush.RelativeTransform = $rot
+      $spin = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 360, ([System.Windows.Duration][TimeSpan]::FromSeconds(4))
+      $spin.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+      $rot.BeginAnimation([System.Windows.Media.RotateTransform]::AngleProperty, $spin)
+    }
+  }.GetNewClosure())
+
+  return @{
+    Win = $win; Card = $win.FindName('card'); Slot = $win.FindName('slot')
+    Overlay = $win.FindName('overlay'); Mascot = $win.FindName('mascot')
+    Event = $Event
+  }
+}
