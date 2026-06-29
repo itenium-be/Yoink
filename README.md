@@ -4,7 +4,13 @@ Pops a custom notification on the monitor where *that* Claude session's terminal
 
 ## Wire up
 
-Add to `~/.claude/settings.json` (merge into an existing `hooks` block if you have one):
+Install the hooks (this repo is assumed to live at `~/.claude/notify`):
+
+```bash
+cp ~/.claude/notify/hooks/*.sh ~/.claude/hooks/
+```
+
+Then add to `~/.claude/settings.json` (merge into an existing `hooks` block if you have one):
 
 ```jsonc
 "hooks": {
