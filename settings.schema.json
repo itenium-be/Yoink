@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://itenium.dev/claude-notify/settings.schema.json",
+  "title": "claude-notify settings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "activeTheme": {
+      "type": "string",
+      "description": "Theme to apply, or \"random\" to pick a different one per notification. Must be \"random\" or a key under \"themes\".",
+      "examples": ["random", "unicorn", "cosmic", "ocean", "sakura", "matrix", "dragon", "vaporwave", "robot", "spooky"]
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-event card appearance. Events are fired by the Stop hook (done) and the Notification hook (needs-input).",
+      "properties": {
+        "done": { "$ref": "#/definitions/event" },
+        "needs-input": { "$ref": "#/definitions/event" }
+      }
+    },
+    "themes": {
+      "type": "object",
+      "description": "Named colour/hero themes selectable via \"activeTheme\".",
+      "additionalProperties": { "$ref": "#/definitions/theme" }
+    }
+  },
+  "definitions": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "Solid colour as #RRGGBB."
+    },
+    "gradientStop": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6} (0(\\.\\d+)?|1(\\.0+)?)$",
+      "description": "\"#RRGGBB <offset>\" where offset is 0..1, e.g. \"#FF5F6D 0.5\"."
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "description": "Bold status text in the card header." },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Colour of the header label text (#RRGGBB)."
+        },
+        "indicator": {
+          "type": "string",
+          "description": "\"fireworks\" for the animated burst, or any emoji to show as the badge. Empty = built-in default."
+        },
+        "mascot": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Mascot choreography. The look-around and the jump onto the card edge always play; these two phases follow it.",
+          "properties": {
+            "move": {
+              "enum": ["walk", "hjump"],
+              "description": "How the mascot crosses the edge to its spot: walk, or a horizontal jump."
+            },
+            "end": {
+              "enum": ["confetti", "gym", "flag"],
+              "description": "Looping animation it settles into."
+            }
+          }
+        },
+        "sound": {
+          "enum": ["asterisk", "exclamation", ""],
+          "description": "Windows system sound. Empty = built-in default; any other value falls back to asterisk."
+        },
+        "body": {
+          "type": "array",
+          "description": "Card body, one entry per line. A line whose tokens all resolve empty is dropped.",
+          "items": { "$ref": "#/definitions/bodyLine" }
+        }
+      }
+    },
+    "bodyLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Line text. Supports {{token}} replacements: folder, cwd, repo, branch, dirty, message, last_prompt, last_assistant, model, agents, pending_tool, permission_mode, event.",
+          "markdownDescription": "Line text. Supports `{{token}}` replacements:\n\n`{{folder}}` `{{cwd}}` `{{repo}}` `{{branch}}` `{{dirty}}` `{{message}}` `{{last_prompt}}` `{{last_assistant}}` `{{model}}` `{{agents}}` `{{pending_tool}}` `{{permission_mode}}` `{{event}}`"
+        },
+        "style": {
+          "enum": ["headline", "sub", "muted"],
+          "description": "headline = large white; sub = medium white; muted = small grey."
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hero", "gradient", "rim", "card"],
+      "properties": {
+        "hero": { "type": "string", "description": "Emoji rendered large behind the card." },
+        "gradient": {
+          "type": "array",
+          "description": "Hero fill gradient stops.",
+          "items": { "$ref": "#/definitions/gradientStop" }
+        },
+        "rim": {
+          "type": "array",
+          "description": "Rotating border gradient stops.",
+          "items": { "$ref": "#/definitions/gradientStop" }
+        },
+        "card": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Card background colour (#RRGGBB)."
+        }
+      }
+    }
+  }
+}
