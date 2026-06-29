@@ -27,6 +27,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-sakura.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-unicorn.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-spooky.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-vaporwave.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -172,6 +173,12 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     bats         = [bool](Get-Prop $theme.scene 'bats')
     eyes         = [bool](Get-Prop $theme.scene 'eyes')
     lightning    = [bool](Get-Prop $theme.scene 'lightning')
+    haze         = [bool](Get-Prop $theme.scene 'haze')
+    mountains    = [bool](Get-Prop $theme.scene 'mountains')
+    grid         = [bool](Get-Prop $theme.scene 'grid')
+    palms        = [bool](Get-Prop $theme.scene 'palms')
+    scanlines    = [bool](Get-Prop $theme.scene 'scanlines')
+    glow         = [bool](Get-Prop $theme.scene 'glow')
   }
 }
 $sceneKinds = @{
@@ -180,7 +187,8 @@ $sceneKinds = @{
   matrix  = { param($b, $c) Start-Matrix $b $c }
   sakura  = { param($b, $c) Start-Sakura $b $c }
   unicorn = { param($b, $c) Start-Unicorn $b $c }
-  spooky  = { param($b, $c) Start-Spooky $b $c }
+  spooky    = { param($b, $c) Start-Spooky $b $c }
+  vaporwave = { param($b, $c) Start-Vaporwave $b $c }
 }
 $win.Add_Loaded({
   if ($sceneCfg) {
