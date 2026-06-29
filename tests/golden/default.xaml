@@ -2,10 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
-        Width="620" Height="330" Opacity="0">
+        Width="620" Height="461" Opacity="0">
   <Grid>
-    <!-- Card sits below a transparent headroom strip so the mascot can land on its top edge. -->
-    <Border CornerRadius="24" Margin="14,104,14,14">
+    <!-- Card sits below a tall transparent headroom strip: room for the mascot to
+         leap onto the top edge and throw confetti / wave a flag above it. -->
+    <Border CornerRadius="24" Margin="14,235,14,14">
       <Border.Background>
         <LinearGradientBrush x:Name="rimBrush" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#7C3AED" Offset="0"/>
 <GradientStop Color="#2563EB" Offset="0.17"/>
