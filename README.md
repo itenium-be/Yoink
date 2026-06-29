@@ -63,8 +63,8 @@ Possible replacements for the notification body text.
 | `{{branch}}`          | Current git branch                                                 |
 | `{{dirty}}`           | `●` when the working tree has uncommitted changes, else empty      |
 | `{{message}}`         | Claude Code's notification reason (needs-input only)               |
-| `{{last_prompt}}`     | Your most recent prompt (truncated to ~120 chars)                  |
-| `{{last_assistant}}`  | Claude's last message (truncated to ~120 chars)                    |
+| `{{last_prompt}}`     | Your most recent prompt                                            |
+| `{{last_assistant}}`  | Claude's last message                                              |
 | `{{model}}`           | Active model id                                                    |
 | `{{agents}}`          | Background agents still running (empty when none)                  |
 | `{{pending_tool}}`    | Name of the most recent tool call                                  |
