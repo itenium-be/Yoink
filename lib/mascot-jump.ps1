@@ -6,19 +6,22 @@
 function Start-Jump {
   param([hashtable]$Box, [scriptblock]$OnDone)
   $m = $Box.Mascot
+  $a = Set-MascotClip $Box 'jump' $Box.FxLeft $Box.FyRest   # start feet in the slot
+  $restTop = $Box.FyRest - $a.Ay
+  $landTop = $Box.FyLand - $a.Ay
   $fps = 30
   $frameCount = @(Get-ChildItem (Join-Path $PSScriptRoot '..\mascots\jump') -Filter 'frame_*.png').Count
   $airborneFrac = 0.55   # sprite has touched back down by ~frame 35/64; stop translating there
   $dur = [System.Windows.Duration][TimeSpan]::FromMilliseconds([int]($frameCount / $fps * 1000 * $airborneFrac))
-  $up = New-Object System.Windows.Media.Animation.DoubleAnimation $Box.RestTop, $Box.LandTop, $dur
+  $up = New-Object System.Windows.Media.Animation.DoubleAnimation $restTop, $landTop, $dur
   $ease = New-Object System.Windows.Media.Animation.QuadraticEase
   $ease.EasingMode = [System.Windows.Media.Animation.EasingMode]::EaseOut
   $up.EasingFunction = $ease
   $m.BeginAnimation([System.Windows.Controls.Canvas]::TopProperty, $up)
   Start-Flipbook -Image $m -Dir (Join-Path $PSScriptRoot '..\mascots\jump') -Fps $fps -OnDone {
-    # Pin the final position so the looped celebrate phase stays on the top edge.
+    # Pin the final position so the next phase starts from the edge.
     $m.BeginAnimation([System.Windows.Controls.Canvas]::TopProperty, $null)
-    [System.Windows.Controls.Canvas]::SetTop($m, $Box.LandTop)
+    [System.Windows.Controls.Canvas]::SetTop($m, $landTop)
     if ($OnDone) { & $OnDone }
   }.GetNewClosure()
 }

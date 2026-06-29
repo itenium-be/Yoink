@@ -11,9 +11,12 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\win-focus.ps1')
 . (Join-Path $PSScriptRoot 'lib\notification-box.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-player.ps1')
+. (Join-Path $PSScriptRoot 'lib\mascot-clip.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-jump-prep.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-jump.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-walk.ps1')
+. (Join-Path $PSScriptRoot 'lib\mascot-hjump.ps1')
+. (Join-Path $PSScriptRoot 'lib\mascot-gym.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-confetti.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-flag-waver.ps1')
 
@@ -24,7 +27,7 @@ if ($null -eq $screen) { $screen = [System.Windows.Forms.Screen]::FromPoint([Sys
 $wa = $screen.WorkingArea
 
 if ($DryRun) {
-  foreach ($d in 'looking','jump','walking','confetti','flag') {
+  foreach ($d in 'looking','jump','walking','horizontal-jump','gym','confetti','flag') {
     $dir = Join-Path $PSScriptRoot "mascots\$d"
     if (-not (Test-Path $dir)) { Write-Error "missing mascot dir: $dir"; exit 1 }
   }
@@ -68,11 +71,17 @@ $win = $box.Win
 # Normalized frames share one canvas; the creature sits at a fixed anchor inside it
 # (torso-centre x, feet-baseline y). One display height drives every phase.
 $anchor = Get-Content (Join-Path $PSScriptRoot 'mascots\anchor.json') -Raw | ConvertFrom-Json
-$box.AnchorX = [double]$anchor.anchorX
-$box.AnchorY = [double]$anchor.anchorY
 $box.MascotH = 243.0
-$box.MascotW = $box.MascotH * $anchor.canvasW / $anchor.canvasH
-$box.Mascot.Height = $box.MascotH   # Stretch=Uniform -> width follows the canvas aspect
+$box.DisplayScale = $box.MascotH / $anchor.canvasH   # on-screen px per canvas px (shared by all clips)
+
+# Per-clip canvas geometry. Core clips share the main anchor; spare clips (gym,
+# horizontal-jump) each carry their own anchor.json so a wide pose isn't clipped.
+$core = @{ W = $anchor.canvasW; H = $anchor.canvasH; AX = [double]$anchor.anchorX; AY = [double]$anchor.anchorY }
+$box.Geom = @{ looking = $core; jump = $core; walking = $core; confetti = $core; flag = $core }
+foreach ($e in 'gym', 'horizontal-jump') {
+  $ea = Get-Content (Join-Path $PSScriptRoot "mascots\$e\anchor.json") -Raw | ConvertFrom-Json
+  $box.Geom[$e] = @{ W = $ea.canvasW; H = $ea.canvasH; AX = [double]$ea.anchorX; AY = [double]$ea.anchorY }
+}
 
 # --- Mascot choreography: look around -> jump onto the top edge -> celebrate ---
 # Started from Loaded because slot/card positions are known only after layout.
