@@ -26,6 +26,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-matrix.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-sakura.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-unicorn.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-spooky.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -163,6 +164,14 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     glitter      = [bool](Get-Prop $theme.scene 'glitter')
     sparkles     = [bool](Get-Prop $theme.scene 'sparkles')
     shootingStar = [bool](Get-Prop $theme.scene 'shootingStar')
+    moon         = [bool](Get-Prop $theme.scene 'moon')
+    fog          = [bool](Get-Prop $theme.scene 'fog')
+    gravestones  = [bool](Get-Prop $theme.scene 'gravestones')
+    webs         = [bool](Get-Prop $theme.scene 'webs')
+    ghosts       = [bool](Get-Prop $theme.scene 'ghosts')
+    bats         = [bool](Get-Prop $theme.scene 'bats')
+    eyes         = [bool](Get-Prop $theme.scene 'eyes')
+    lightning    = [bool](Get-Prop $theme.scene 'lightning')
   }
 }
 $sceneKinds = @{
@@ -171,6 +180,7 @@ $sceneKinds = @{
   matrix  = { param($b, $c) Start-Matrix $b $c }
   sakura  = { param($b, $c) Start-Sakura $b $c }
   unicorn = { param($b, $c) Start-Unicorn $b $c }
+  spooky  = { param($b, $c) Start-Spooky $b $c }
 }
 $win.Add_Loaded({
   if ($sceneCfg) {
