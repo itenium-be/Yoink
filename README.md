@@ -28,6 +28,11 @@ Then add to `~/.claude/settings.json` (merge into an existing `hooks` block if y
 
 Restart Claude Code (the `SessionStart` capture runs on next launch).
 
+## Usage
+
+- **Left click** — activate the originating terminal.
+- **Right click** — close the notification without activating the terminal.
+
 ## Requirements
 
 WSL + Windows Terminal, `powershell.exe` and `jq` on `PATH`.
