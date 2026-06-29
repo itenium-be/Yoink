@@ -34,5 +34,6 @@ check "save keeps label" "[[ \"\$(jq -r .events.done.label '$TMP/out.json')\" ==
 
 OUT2="$(run -SettingsPath "$(wslpath -w "$CFG")" -SelfTest)"
 check "selftest builds + rebuilds" "grep -q 'selftest ok' <<<\"\$OUT2\""
+check "selftest wires window icon" "grep -q 'icon ok' <<<\"\$OUT2\""
 
 exit $fail

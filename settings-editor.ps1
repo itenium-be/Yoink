@@ -74,6 +74,8 @@ $xaml = @"
 </Window>
 "@
 $win = [Windows.Markup.XamlReader]::Parse($xaml)
+$icoPath = Join-Path $PSScriptRoot 'favicon.ico'
+if (Test-Path $icoPath) { $win.Icon = [Windows.Media.Imaging.BitmapFrame]::Create((New-Object System.Uri $icoPath)) }
 $script:form = $win.FindName('form'); $script:cardHost = $win.FindName('cardHost'); $script:status = $win.FindName('status')
 
 # --- Debounced full rebuild of the bottom card from the current model ---
@@ -443,7 +445,8 @@ if ($SelfTest) {
     if (-not (Get-Command $fn -ErrorAction SilentlyContinue)) { Write-Error "missing $fn"; exit 1 }
   }
   if ($null -eq $script:box -or $null -eq $script:box.Card) { Write-Error 'rebuild produced no card'; exit 1 }
-  Write-Output 'selftest ok'; return
+  if ($null -eq $win.Icon) { Write-Error 'window icon not set'; exit 1 }
+  Write-Output 'selftest ok'; Write-Output 'icon ok'; return
 }
 
 $win.Add_Loaded({ Request-Rebuild })
