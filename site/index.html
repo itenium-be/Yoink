@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Claude Notify — themed Claude Code notifications for Windows + WSL</title>
+  <meta name="description" content="Pops a themed notification on the right monitor when Claude Code needs you or finishes — bell, window flash, animated mascot, click to focus. 9 skins, themeable sounds, fully configurable." />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <meta property="og:title" content="Claude Notify" />
+  <meta property="og:description" content="Themed Claude Code notifications for Windows + WSL. Click a theme to repaint the page." />
+  <meta property="og:image" content="assets/favicon.png" />
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="wash" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top">
+      <img src="assets/favicon.png" alt="" width="28" height="28" />
+      <span>claude&#8203;-notify</span>
+    </a>
+    <nav>
+      <a href="#how">How</a>
+      <a href="#features">Features</a>
+      <a href="#themes">Themes</a>
+      <a href="#install">Install</a>
+      <a class="ghb" href="https://github.com/itenium-be/Claude-Notify">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="kicker">Click a theme — the whole page becomes that notification</p>
+      <div id="themeRow" class="theme-row" role="group" aria-label="Pick a theme"></div>
+
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1>Claude finished.<br />You were on another monitor.</h1>
+          <p class="lede">
+            <strong>Claude Notify</strong> pops a notification on the screen where <em>that</em>
+            Claude Code terminal lives — bell, window flash, and an animated
+            <span class="nowrap" id="themeName">Unicorn</span> mascot. Click it to jump
+            straight back to the right terminal.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="#install">Get started</a>
+            <a class="btn ghost" href="https://github.com/itenium-be/Claude-Notify">View on GitHub</a>
+          </div>
+          <p class="scene-note">Live backdrop: <span id="sceneBlurb">rainbow arc, drifting clouds, sparkles</span></p>
+        </div>
+
+        <!-- Live notification card — mirrors the real popup layout from settings.json -->
+        <div class="notif" role="img" aria-label="Example notification">
+          <div class="notif-frame">
+            <div class="notif-rim"></div>
+            <div class="notif-card">
+              <div class="notif-accent"></div>
+              <div class="notif-top">
+                <span class="notif-label" id="cardLabel">Done!</span>
+                <span class="notif-hero" id="heroEmoji">🦄</span>
+              </div>
+              <div class="notif-body">
+                <img class="notif-mascot" src="assets/favicon.png" alt="" width="56" height="56" />
+                <div>
+                  <p class="notif-headline" id="cardHeadline">All tests green — pushed to main.</p>
+                  <p class="notif-sub">/notify/</p>
+                </div>
+              </div>
+              <div class="notif-footer">
+                <span class="badge" style="background:#7C3AED;color:#F5F3FF">main</span>
+                <span class="badge" style="background:#0891B2;color:#ECFEFF">0 🤖</span>
+                <span class="mascot-tag">mascot: <span id="cardMascotLabel">confetti</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="event-tabs" role="group" aria-label="Preview event">
+            <button class="event-tab" type="button" data-event="done" aria-pressed="true">done</button>
+            <button class="event-tab" type="button" data-event="needs-input" aria-pressed="false">needs&#8209;input</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="band">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><span class="num">1</span><h3>Hook fires</h3><p>Claude Code's <code>Stop</code> / <code>Notification</code> hooks call a tiny bash script in WSL.</p></li>
+        <li><span class="num">2</span><h3>Right monitor</h3><p>It finds the terminal that started the session and pops the card on <em>that</em> screen — plus a bell and a window flash.</p></li>
+        <li><span class="num">3</span><h3>Click to focus</h3><p><strong>Left-click</strong> activates the originating terminal. <strong>Right-click</strong> dismisses. It also auto-closes when you focus the terminal yourself.</p></li>
+      </ol>
+    </section>
+
+    <section id="features" class="band">
+      <h2>What's in the box</h2>
+      <div class="feature-grid">
+        <article><span class="fi">🌈</span><h3>9 animated themes</h3><p>Unicorn, Cosmic, Ocean, Sakura, Matrix, Dragon, Vaporwave, Robot, Spooky — each with its own gradient, rainbow rim and live scene.</p></article>
+        <article><span class="fi">🕹️</span><h3>Pixel mascot</h3><p>A little critter walks across the card and ends in confetti when you're done, or plants a flag when Claude needs you.</p></article>
+        <article><span class="fi">🖥️</span><h3>Per-monitor targeting</h3><p>Multi-session, multi-screen? Each notification lands on the monitor of the terminal that spawned it.</p></article>
+        <article><span class="fi">🔔</span><h3>Bell + flash + click</h3><p>Audible bell, taskbar flash, and one click back to the exact terminal. Auto-dismiss on focus.</p></article>
+        <article><span class="fi">🔤</span><h3>Token templating</h3><p>Compose the card text from live context — folder, repo, branch, dirty flag, model, running agents, last prompt and more.</p></article>
+        <article><span class="fi">🔊</span><h3>Themeable sounds</h3><p>Per-theme, per-event WAVs — cosmic whooshes, kalimba chimes, owl hoots. Preview them in the editor.</p></article>
+        <article><span class="fi">🎛️</span><h3>Settings editor</h3><p>A PowerShell GUI to test-drive themes, sounds and options without hand-editing JSON.</p></article>
+        <article><span class="fi">🐧</span><h3>WSL native</h3><p>Bash hooks + PowerShell rendering. Just needs <code>jq</code> on your PATH.</p></article>
+      </div>
+    </section>
+
+    <section id="themes" class="band">
+      <h2>Nine skins, same critter</h2>
+      <p class="band-sub">The pills up top repaint this whole page live. Below: a still of each notification skin.</p>
+      <div class="theme-gallery">
+        <!-- MEDIA PLACEHOLDER: drop a real screenshot of each themed popup into assets/themes/<key>.png -->
+        <figure data-theme-card="unicorn"><div class="ph">📸 unicorn popup<br /><small>assets/themes/unicorn.png</small></div><figcaption>🦄 Unicorn</figcaption></figure>
+        <figure data-theme-card="cosmic"><div class="ph">📸 cosmic popup<br /><small>assets/themes/cosmic.png</small></div><figcaption>🚀 Cosmic</figcaption></figure>
+        <figure data-theme-card="ocean"><div class="ph">📸 ocean popup<br /><small>assets/themes/ocean.png</small></div><figcaption>🐳 Ocean</figcaption></figure>
+        <figure data-theme-card="sakura"><div class="ph">📸 sakura popup<br /><small>assets/themes/sakura.png</small></div><figcaption>🌸 Sakura</figcaption></figure>
+        <figure data-theme-card="matrix"><div class="ph">📸 matrix popup<br /><small>assets/themes/matrix.png</small></div><figcaption>💊 Matrix</figcaption></figure>
+        <figure data-theme-card="dragon"><div class="ph">📸 dragon popup<br /><small>assets/themes/dragon.png</small></div><figcaption>🐉 Dragon</figcaption></figure>
+        <figure data-theme-card="vaporwave"><div class="ph">📸 vaporwave popup<br /><small>assets/themes/vaporwave.png</small></div><figcaption>🌴 Vaporwave</figcaption></figure>
+        <figure data-theme-card="robot"><div class="ph">📸 robot popup<br /><small>assets/themes/robot.png</small></div><figcaption>🤖 Robot</figcaption></figure>
+        <figure data-theme-card="spooky"><div class="ph">📸 spooky popup<br /><small>assets/themes/spooky.png</small></div><figcaption>🎃 Spooky</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="demo" class="band">
+      <h2>See it fire</h2>
+      <div class="media-row">
+        <figure class="media-ph wide">
+          <div class="ph tall">🎬 Hero screen-capture<br /><small>mascot walks in → confetti, on the second monitor — assets/media/demo.mp4</small></div>
+          <figcaption>The money shot: a real notification firing as Claude finishes.</figcaption>
+        </figure>
+        <figure class="media-ph">
+          <div class="ph tall">🎬 Settings editor<br /><small>test-driving themes &amp; sounds — assets/media/editor.mp4</small></div>
+          <figcaption>The PowerShell settings editor.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="install" class="band">
+      <h2>Install</h2>
+      <ol class="install">
+        <li>
+          <h3>Clone into your Claude config</h3>
+          <div class="code"><pre id="code-clone"><code>git clone https://github.com/itenium-be/Claude-Notify ~/.claude/notify
+sudo apt install jq   # WSL needs jq on PATH</code></pre><button class="copy" data-copy="code-clone">Copy</button></div>
+        </li>
+        <li>
+          <h3>Wire up the hooks</h3>
+          <p>Point <code>~/.claude/settings.json</code> at the hook scripts:</p>
+          <div class="code"><pre id="code-hooks"><code>"hooks": {
+  "SessionStart": [
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-capture.sh" } ] }
+  ],
+  "Stop": [
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh done" } ] }
+  ],
+  "Notification": [
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh needs-input" } ] }
+  ]
+}</code></pre><button class="copy" data-copy="code-hooks">Copy</button></div>
+        </li>
+        <li>
+          <h3>Pick your vibe</h3>
+          <p>Restart Claude Code, then test-drive themes in the editor:</p>
+          <div class="code"><pre id="code-editor"><code>.\settings-editor.ps1</code></pre><button class="copy" data-copy="code-editor">Copy</button></div>
+        </li>
+      </ol>
+      <a class="btn primary big" href="https://github.com/itenium-be/Claude-Notify">Full docs on GitHub ↗</a>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <img src="assets/favicon.png" alt="" width="22" height="22" />
+    <span>Claude Notify — by <a href="https://github.com/itenium-be">itenium</a>.</span>
+    <a href="https://github.com/itenium-be/Claude-Notify">Source</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
