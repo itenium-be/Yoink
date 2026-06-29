@@ -55,6 +55,20 @@ Flash and auto-close on *this* terminal:
 .\show-notification.ps1 -Event done -Hwnd ([int64](Get-Process -Id $PID).MainWindowHandle)
 ```
 
+## Settings editor
+
+A live editor for `settings.json` — controls on top, the notification card looping below.
+Edits are in-memory until you press **Save**.
+
+```powershell
+.\settings-editor.ps1
+```
+
+Pick the event, theme, mascot moves, sounds and the active theme's scene toggles; the card
+re-renders as you change them. Body/footer text and gradient colours aren't editable yet —
+edit those in `settings.json` directly. The preview spawns a fresh animated card per edit, so
+after many tweaks it can get sluggish — restart the editor if so.
+
 ## Configuration
 
 Each event's body is a list of templated lines in `settings.json` (`events.<event>.body`). Lines use `{{token}}` replacements; a line whose tokens all resolve empty is dropped.
