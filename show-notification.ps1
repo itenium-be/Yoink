@@ -75,6 +75,9 @@ Set-Content -Path $marker -Value $PID
 # Flash the originating terminal (taskbar + title bar) until it gets focus.
 if ($Hwnd -ne 0) { try { [WinFocus]::Flash([IntPtr]$Hwnd) } catch {} }
 
+# Without a target window we can't auto-close on focus, so fall back to a timeout.
+if ($Hwnd -eq 0 -and $Seconds -le 0) { $Seconds = 15 }
+
 # --- Sound --- (an empty sound config means stay silent)
 if (-not [string]::IsNullOrWhiteSpace([string]$ev.sound)) {
   try {
@@ -103,17 +106,23 @@ foreach ($e in 'gym', 'horizontal-jump') {
   $box.Geom[$e] = @{ W = $ea.canvasW; H = $ea.canvasH; AX = [double]$ea.anchorX; AY = [double]$ea.anchorY }
 }
 
-# --- Mascot choreography: look around -> jump onto the top edge -> celebrate ---
+# --- Mascot choreography: look around -> jump onto the top edge -> move -> celebrate ---
+# The look + jump onto the edge are always played; only the move and end are configurable.
 # Started from Loaded because slot/card positions are known only after layout.
 # NB: plain scriptblock, not .GetNewClosure() - the closure form rebinds to a module
 # scope that can't see the script-scoped phase functions when the script is launched
 # via the call operator (.\show-notification.ps1) rather than -File.
+$box.Move = $ev.mascot.move   # walk | hjump
+$box.End  = $ev.mascot.end    # confetti | gym | flag
 $win.Add_Loaded({
   Start-JumpPrep $box {
     Start-Jump $box {
-      Start-Walk $box {
-        if ($box.Event -eq 'done') { Start-Confetti $box } else { Start-FlagWave $box }
+      $celebrate = {
+        if     ($box.End -eq 'gym')  { Start-Gym $box }
+        elseif ($box.End -eq 'flag') { Start-FlagWave $box }
+        else                         { Start-Confetti $box }
       }
+      if ($box.Move -eq 'hjump') { Start-HJump $box $celebrate } else { Start-Walk $box $celebrate }
     }
   }
 })

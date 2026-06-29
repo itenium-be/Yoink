@@ -109,14 +109,23 @@ Assert-Eq $cols[0] '#FF0000' "first stop color"
 Assert-Eq $cols[2] '#0000FF' "last stop color"
 Assert-Eq (@(Get-StopColors @('bad','#123456 0.4')).Count) 1 "unparseable stop skipped"
 
-# --- indicator / sound: explicit "" honored (no badge / silent); MISSING key -> default ---
+# --- indicator: explicit "" is honored (no badge); a MISSING key falls back to default ---
 $cfgEmptyInd = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ indicator = '' } } }
 Assert-Eq (Resolve-Event $cfgEmptyInd 'needs-input').indicator '' "explicit empty indicator honored"
 $cfgNoInd = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ label = 'X' } } }
 Assert-Eq (Resolve-Event $cfgNoInd 'needs-input').indicator '👋' "missing indicator falls back to default"
+
+# --- sound: explicit "" is honored (silent); a MISSING key falls back to default ---
 $cfgEmptySnd = [pscustomobject]@{ events = [pscustomobject]@{ 'done' = [pscustomobject]@{ sound = '' } } }
 Assert-Eq (Resolve-Event $cfgEmptySnd 'done').sound '' "explicit empty sound honored"
 $cfgNoSnd = [pscustomobject]@{ events = [pscustomobject]@{ 'done' = [pscustomobject]@{ label = 'Y' } } }
 Assert-Eq (Resolve-Event $cfgNoSnd 'done').sound 'asterisk' "missing sound falls back to default"
+
+# --- mascot: move/end resolve, each field falling back to the event default ---
+Assert-Eq (Resolve-Event $cfg 'done').mascot.move 'walk' "resolve mascot move"
+Assert-Eq (Resolve-Event $cfg 'done').mascot.end 'confetti' "resolve mascot end (done)"
+$cfgPartialMascot = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ mascot = [pscustomobject]@{ move = 'hjump' } } } }
+Assert-Eq (Resolve-Event $cfgPartialMascot 'needs-input').mascot.move 'hjump' "explicit move honored"
+Assert-Eq (Resolve-Event $cfgPartialMascot 'needs-input').mascot.end 'flag' "missing end falls back to default (needs-input)"
 
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }

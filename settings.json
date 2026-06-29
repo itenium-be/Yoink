@@ -2,7 +2,7 @@
   "activeTheme": "unicorn",
   "events": {
     "needs-input": {
-      "label": "Needs you", "accent": "#FF7A18", "indicator": "👋", "mascot": "flag", "sound": "exclamation",
+      "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": "",
       "body": [
         { "text": "{{message}}",            "style": "headline" },
         { "text": "{{folder}} · {{branch}}", "style": "sub" },
@@ -10,7 +10,7 @@
       ]
     },
     "done": {
-      "label": "Done!", "accent": "#22C55E", "indicator": "fireworks", "mascot": "confetti", "sound": "asterisk",
+      "label": "Done!", "accent": "#22C55E", "indicator": "", "mascot": { "move": "walk", "end": "confetti" }, "sound": "",
       "body": [
         { "text": "{{last_assistant}}",       "style": "headline" },
         { "text": "{{folder}} · {{branch}}",   "style": "sub" },
