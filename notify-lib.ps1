@@ -19,9 +19,9 @@ function Get-NotifyDefaults {
   @{
     activeTheme = 'unicorn'
     events = @{
-      'needs-input' = @{ label='Needs you'; accent='#FF7A18'; indicator='👋'; mascot=@{ move='walk'; end='flag' }; sound='exclamation';
+      'needs-input' = @{ label='Needs you'; accent='#FF7A18'; indicator='👋'; mascot=@{ move='walk'; end='flag' }; sound=$true;
         body=@(@{ text='{{folder}}'; style='sub' }); footer=@() }
-      'done' = @{ label='Done!'; accent='#22C55E'; indicator='fireworks'; mascot=@{ move='walk'; end='confetti' }; sound='asterisk';
+      'done' = @{ label='Done!'; accent='#22C55E'; indicator='fireworks'; mascot=@{ move='walk'; end='confetti' }; sound=$true;
         body=@(@{ text='{{folder}}'; style='sub' }); footer=@() }
     }
     themes = @{
@@ -149,6 +149,7 @@ function Resolve-Theme($cfg, [string]$name) {
     rim        = @(Coalesce (Get-Prop $t 'rim')      $def.rim)
     card       = (Coalesce (Get-Prop $t 'card')     $def.card)
     scene      = (Get-Prop $t 'scene')
+    sound      = (Get-Prop $t 'sound')
   }
 }
 
@@ -170,7 +171,7 @@ function Resolve-Event($cfg, [string]$event) {
       move = (Coalesce (Get-Prop (Get-Prop $e 'mascot') 'move') $def.mascot.move)
       end  = (Coalesce (Get-Prop (Get-Prop $e 'mascot') 'end')  $def.mascot.end)
     }
-    sound     = [string]$snd
+    sound     = $snd
     body      = @(Coalesce (Get-Prop $e 'body')      $def.body)
     footer    = @($ftr)
   }
