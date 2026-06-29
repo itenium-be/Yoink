@@ -125,7 +125,27 @@
       "additionalProperties": false,
       "required": ["hero", "gradient", "rim", "card"],
       "properties": {
-        "hero": { "type": "string", "description": "Emoji rendered large behind the card." },
+        "hero": {
+          "description": "Emoji rendered large behind the card. A bare string is filled with the theme gradient; the object form recolours the silhouette.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["emoji"],
+              "properties": {
+                "emoji": { "type": "string", "description": "The glyph to render." },
+                "color": { "type": "string", "description": "Single fixed fill colour (#RRGGBB or a named colour, e.g. \"white\")." },
+                "colors": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "Fill colours rendered as equal hard-edged bands; two give a 50/50 split (e.g. the red/blue pill).",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          ]
+        },
         "gradient": {
           "type": "array",
           "description": "Hero fill gradient stops.",

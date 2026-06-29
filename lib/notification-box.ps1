@@ -44,6 +44,9 @@ function New-NotificationBox {
   $accent     = $Ev.accent
   $heroStops  = New-GradientStops $Theme.gradient
   $rimStops   = New-GradientStops $Theme.rim
+  # The big hero watermark can carry its own fixed colours (e.g. the red/blue pill);
+  # the small event-indicator badge always keeps the theme gradient ($heroStops).
+  $watermarkStops = if ($Theme.heroColors) { New-HeroStops @($Theme.heroColors) } else { $heroStops }
 
   # An empty indicator means "no badge": emit no element at all (the 64px slot
   # vanishes too). Otherwise: 'fireworks' -> particle canvas, any emoji -> waving badge.
@@ -103,7 +106,7 @@ function New-NotificationBox {
                VerticalAlignment must stay Stretch: a Rectangle with no Height collapses otherwise. -->
           <Rectangle x:Name="unicorn" Panel.ZIndex="0" Width="210" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0" Opacity="0.92">
             <Rectangle.Fill>
-              <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">$heroStops</LinearGradientBrush>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">$watermarkStops</LinearGradientBrush>
             </Rectangle.Fill>
             <Rectangle.OpacityMask>
               <VisualBrush Stretch="Uniform">

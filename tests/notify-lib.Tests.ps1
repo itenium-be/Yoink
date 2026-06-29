@@ -34,6 +34,17 @@ Assert-Eq (New-GradientStops @('bad','#0000FF 0.5')) `
   "gradient skips unparseable stop"
 Assert-Eq (New-GradientStops @('#123456')) '' "stop without offset skipped"
 
+# --- New-HeroStops: plain colours -> hard-banded stops (no per-stop offsets) ---
+Assert-Eq (New-HeroStops @('white')) `
+  "<GradientStop Color=`"white`" Offset=`"0`"/>`n<GradientStop Color=`"white`" Offset=`"1`"/>" `
+  "single hero colour -> solid (0..1)"
+Assert-Eq (New-HeroStops @('#EF4444', '#3B82F6')) `
+  "<GradientStop Color=`"#EF4444`" Offset=`"0`"/>`n<GradientStop Color=`"#EF4444`" Offset=`"0.5`"/>`n<GradientStop Color=`"#3B82F6`" Offset=`"0.5`"/>`n<GradientStop Color=`"#3B82F6`" Offset=`"1`"/>" `
+  "two hero colours -> hard 50/50 split (red/blue pill)"
+Assert-Eq (New-HeroStops @('#12', 'white')) `
+  "<GradientStop Color=`"white`" Offset=`"0`"/>`n<GradientStop Color=`"white`" Offset=`"1`"/>" `
+  "hero skips invalid colour token"
+
 # --- Resolution (inline fixture). The SHIPPED settings.json is validated structurally
 # by tests/settings.Tests.sh; resolving against a fixture keeps these green no matter
 # how a user edits their own settings.json. ---
@@ -42,6 +53,8 @@ $cfg = [pscustomobject]@{
   themes = [pscustomobject]@{
     unicorn = [pscustomobject]@{ hero = '🦄'; gradient = @('#FF5F6D 0', '#A56BFF 1'); rim = @('#7C3AED 0', '#EC4899 1'); card = '#18181B' }
     ocean   = [pscustomobject]@{ hero = '🐳'; gradient = @('#0EA5E9 0', '#0891B2 1'); rim = @('#0C4A6E 0', '#14B8A6 1'); card = '#0A1620'; scene = [pscustomobject]@{ kind = 'waves' } }
+    pill    = [pscustomobject]@{ hero = [pscustomobject]@{ emoji = '💊'; colors = @('#EF4444', '#3B82F6') }; gradient = @('#000000 0', '#111111 1'); rim = @('#000000 0', '#111111 1'); card = '#050505' }
+    bunny   = [pscustomobject]@{ hero = [pscustomobject]@{ emoji = '🐇'; color = 'white' }; gradient = @('#000000 0', '#111111 1'); rim = @('#000000 0', '#111111 1'); card = '#050505' }
   }
   events = [pscustomobject]@{
     'needs-input' = [pscustomobject]@{
@@ -60,6 +73,16 @@ $theme = Resolve-Theme $cfg 'ocean'
 Assert-Eq $theme.hero '🐳' "resolve named theme hero"
 $missing = Resolve-Theme $cfg 'nope'
 Assert-Eq $missing.hero '🦄' "unknown theme -> unicorn default"
+
+# Object-form hero: emoji + fill colours (split for the pill, single for the bunny);
+# string-form heroes carry no heroColors (watermark falls back to the theme gradient).
+$pill = Resolve-Theme $cfg 'pill'
+Assert-Eq $pill.hero '💊' "object hero -> emoji"
+Assert-Eq ($pill.heroColors -join ',') '#EF4444,#3B82F6' "object hero -> colours array"
+$bunny = Resolve-Theme $cfg 'bunny'
+Assert-Eq $bunny.hero '🐇' "object hero (single colour) -> emoji"
+Assert-Eq ($bunny.heroColors -join ',') 'white' "single colour -> one-element heroColors"
+Assert-Eq ([string]$theme.heroColors) '' "string hero -> no heroColors"
 
 Assert-Eq (Resolve-Theme $cfg 'ocean').scene.kind 'waves' "resolve theme scene passthrough"
 Assert-Eq ([string](Resolve-Theme $cfg 'unicorn').scene) '' "theme without scene -> null/empty"

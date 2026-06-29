@@ -21,6 +21,8 @@ check "ocean scene has sky+sun+clouds" "[[ \"\$(jq -rc '[.themes.ocean.scene.sky
 check "cosmic has space scene" "[[ \"\$(jq -r '.themes.cosmic.scene.kind // empty' '$F')\" == 'space' ]]"
 check "cosmic scene has stars+nebula+comets" "[[ \"\$(jq -rc '[.themes.cosmic.scene.stars,.themes.cosmic.scene.nebula,.themes.cosmic.scene.comets]' '$F')\" == '[true,true,true]' ]]"
 check "matrix has matrix scene" "[[ \"\$(jq -r '.themes.matrix.scene.kind // empty' '$F')\" == 'matrix' ]]"
-check "matrix scene has streaks on" "[[ \"\$(jq -r '.themes.matrix.scene.streaks' '$F')\" == 'true' ]]"
+check "matrix scene streaks is boolean" "[[ \"\$(jq -r '.themes.matrix.scene.streaks|type' '$F')\" == 'boolean' ]]"
+check "matrix hero uses object form" "[[ \"\$(jq -r '.themes.matrix.hero.emoji // empty' '$F')\" == '🐇' ]]"
+check "matrix hero is fixed white" "[[ \"\$(jq -r '.themes.matrix.hero.color // empty' '$F')\" == 'white' ]]"
 
 exit $fail

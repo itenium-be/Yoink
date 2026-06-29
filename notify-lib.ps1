@@ -47,6 +47,26 @@ function New-GradientStops([string[]]$stops) {
   ($out -join "`n")
 }
 
+# Plain colours (hex or a WPF named colour) -> hard-banded <GradientStop/> XAML: each
+# colour fills an equal, sharp-edged slice of the hero silhouette, so two colours give
+# a clean 50/50 split (the red/blue pill) and one colour gives a solid fill. Unlike
+# New-GradientStops, the inputs carry no offsets. Invalid tokens are skipped, which
+# also blocks XAML injection via the colour string.
+function New-HeroStops([string[]]$colors) {
+  $ic = [System.Globalization.CultureInfo]::InvariantCulture
+  $valid = @($colors | Where-Object { $_ -match '^#[0-9A-Fa-f]{6}$' -or $_ -match '^[A-Za-z]+$' })
+  $n = $valid.Count
+  if ($n -eq 0) { return '' }
+  $out = New-Object System.Collections.Generic.List[string]
+  for ($i = 0; $i -lt $n; $i++) {
+    $lo = ($i / [double]$n).ToString('0.####', $ic)
+    $hi = (($i + 1) / [double]$n).ToString('0.####', $ic)
+    $out.Add("<GradientStop Color=`"$($valid[$i])`" Offset=`"$lo`"/>")
+    $out.Add("<GradientStop Color=`"$($valid[$i])`" Offset=`"$hi`"/>")
+  }
+  ($out -join "`n")
+}
+
 # Load settings.json from $Dir if present; otherwise return built-in defaults. Never throws.
 function Get-NotifyConfig([string]$Dir) {
   $path = Join-Path $Dir 'settings.json'
@@ -79,12 +99,31 @@ function Resolve-ThemeName($cfg) {
 function Resolve-Theme($cfg, [string]$name) {
   $def = (Get-NotifyDefaults).themes.unicorn
   $t = Get-Prop (Get-Prop $cfg 'themes') $name
+
+  # hero is either a bare emoji string or an object { emoji, color | colors }. The
+  # object form recolours the silhouette (heroColors); a string keeps the default
+  # gradient fill (heroColors stays $null).
+  $rawHero = Get-Prop $t 'hero'
+  $heroEmoji = $def.hero; $heroColors = $null
+  if ($rawHero -is [string] -and $rawHero -ne '') {
+    $heroEmoji = $rawHero
+  } elseif ($rawHero) {
+    $heroEmoji = (Coalesce (Get-Prop $rawHero 'emoji') $def.hero)
+    $cols = @(Get-Prop $rawHero 'colors')
+    if (-not $cols -or $cols.Count -eq 0) {
+      $one = Get-Prop $rawHero 'color'
+      $cols = if ($one) { @($one) } else { @() }
+    }
+    if ($cols.Count -gt 0) { $heroColors = @($cols) }
+  }
+
   @{
-    hero     = (Coalesce (Get-Prop $t 'hero')     $def.hero)
-    gradient = @(Coalesce (Get-Prop $t 'gradient') $def.gradient)
-    rim      = @(Coalesce (Get-Prop $t 'rim')      $def.rim)
-    card     = (Coalesce (Get-Prop $t 'card')     $def.card)
-    scene    = (Get-Prop $t 'scene')
+    hero       = $heroEmoji
+    heroColors = $heroColors
+    gradient   = @(Coalesce (Get-Prop $t 'gradient') $def.gradient)
+    rim        = @(Coalesce (Get-Prop $t 'rim')      $def.rim)
+    card       = (Coalesce (Get-Prop $t 'card')     $def.card)
+    scene      = (Get-Prop $t 'scene')
   }
 }
 
