@@ -54,5 +54,8 @@ sleep 0.3
 ok "fire fallback hwnd 0" 'grep -q -- "-Hwnd 0" "$CLAUDE_NOTIFY_DIR/last_show.txt"'
 ok "fire needs-input event" 'grep -q -- "-Event needs-input" "$CLAUDE_NOTIFY_DIR/last_show.txt"'
 
+# --- mascot outline step ---
+ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
+
 echo "----"; echo "$pass passed, $fail failed"
 [[ $fail -eq 0 ]]
