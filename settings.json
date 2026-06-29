@@ -71,7 +71,8 @@
       "hero": "🌴",
       "gradient": ["#FF6AD5 0", "#C774E8 0.3", "#AD8CFF 0.55", "#8795E8 0.8", "#94D0FF 1"],
       "rim": ["#FF71CE 0", "#B967FF 0.25", "#01CDFE 0.5", "#05FFA1 0.75", "#FFFB96 1"],
-      "card": "#160F1F"
+      "card": "#160F1F",
+      "scene": { "kind": "vaporwave", "haze": true, "sun": true, "grid": true, "scanlines": true }
     },
     "robot": {
       "hero": "🤖",

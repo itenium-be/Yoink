@@ -45,4 +45,9 @@ check "schema scene.kind allows spooky"  "jq -e '.definitions.scene.properties.k
 check "schema defines spooky scene flags" \
   "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"moon\"),has(\"fog\"),has(\"gravestones\"),has(\"webs\"),has(\"ghosts\"),has(\"bats\"),has(\"eyes\"),has(\"lightning\")]' '$SCHEMA')\" == '[true,true,true,true,true,true,true,true]' ]]"
 
+check "vaporwave has vaporwave scene"       "[[ \"\$(jq -r '.themes.vaporwave.scene.kind // empty' '$F')\" == 'vaporwave' ]]"
+check "schema scene.kind allows vaporwave"  "jq -e '.definitions.scene.properties.kind.enum|index(\"vaporwave\")' '$SCHEMA' >/dev/null"
+check "schema defines vaporwave scene flags" \
+  "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"haze\"),has(\"sun\"),has(\"stars\"),has(\"mountains\"),has(\"grid\"),has(\"palms\"),has(\"scanlines\"),has(\"glow\")]' '$SCHEMA')\" == '[true,true,true,true,true,true,true,true]' ]]"
+
 exit $fail
