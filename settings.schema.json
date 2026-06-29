@@ -179,9 +179,9 @@
         "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Layer opacity (waves default 0.22, matrix default 0.9)." },
         "speed": { "type": "number", "exclusiveMinimum": 0, "description": "Animation speed multiplier (default 1.0)." },
         "sky": { "type": "boolean", "description": "waves: draw a sky+sea gradient above the waves." },
-        "sun": { "type": "boolean", "description": "waves: draw a glowing sun in the sky (needs \"sky\")." },
+        "sun": { "type": "boolean", "description": "waves: draw a glowing sun in the sky (needs \"sky\"); vaporwave: draw a banded retro sun sitting on the horizon." },
         "clouds": { "type": "boolean", "description": "waves: draw drifting clouds in the sky (needs \"sky\")." },
-        "stars": { "type": "boolean", "description": "space: draw a twinkling starfield." },
+        "stars": { "type": "boolean", "description": "space: draw a twinkling starfield; vaporwave: draw twinkling dots in the upper sky." },
         "nebula": { "type": "boolean", "description": "space: draw soft drifting nebula glow." },
         "comets": { "type": "boolean", "description": "space: draw occasional shooting-star streaks." },
         "density": { "type": "number", "minimum": 0, "maximum": 1, "description": "matrix: fraction of columns that carry a glyph stream (default 0.85)." },
@@ -218,7 +218,6 @@
         "grid": { "type": "boolean", "description": "vaporwave: draw a receding neon perspective grid." },
         "palms": { "type": "boolean", "description": "vaporwave: draw palm silhouettes framing the corners." },
         "scanlines": { "type": "boolean", "description": "vaporwave: draw rolling VHS scanlines over the card." }
-
       }
     }
   }

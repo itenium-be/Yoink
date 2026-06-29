@@ -167,7 +167,7 @@ function Add-VaporwaveGrid($canvas, [double]$w, [double]$h, [double]$opacity, [d
 
 # Angular palm silhouettes framing the bottom corners. Straight-segment fronds drawn
 # inline (no curves -> no geometry helper needed). Invariant culture so the inline
-# path coords keep '.' decimals. Off by default: the 🌴 hero already owns the motif.
+# path coords keep '.' decimals. Off by default: the palm hero already owns the motif.
 function Add-VaporwavePalms($canvas, [double]$w, [double]$h) {
   $ic = [System.Globalization.CultureInfo]::InvariantCulture
   $f = { param($v) ([double]$v).ToString('0.##', $ic) }
@@ -260,7 +260,7 @@ function Start-Vaporwave($box, $cfg) {
   if ($cfg.haze)      { Add-VaporwaveHaze      $canvas $w $h }
   if ($cfg.sun)       { Add-VaporwaveSun       $canvas $w $h $speed }
   if ($cfg.stars)     { Add-VaporwaveStars     $canvas $w $h $speed }
-  if ($cfg.mountains) { Add-VaporwaveMountains  $canvas $w $h $opacity }
+  if ($cfg.mountains) { Add-VaporwaveMountains $canvas $w $h $opacity }
   if ($cfg.grid)      { Add-VaporwaveGrid      $canvas $w $h $opacity $speed }
   if ($cfg.palms)     { Add-VaporwavePalms     $canvas $w $h }
   if ($cfg.scanlines) { Add-VaporwaveScanlines $canvas $w $h $opacity $speed }
