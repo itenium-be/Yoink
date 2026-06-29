@@ -27,9 +27,15 @@ Assert-Eq ([regex]::Matches($d, 'M 50,60 ').Count) 4 "one move per vertical (col
 Assert-True ($d.Contains('33.33')) "uses '.' decimal separator"
 Assert-True (-not $d.Contains('33,33')) "does not use ',' decimal separator"
 
+# rows = 0 -> vertical rays only (the live grid animates its own horizontals).
+# cols=4 -> 5 verticals, each starting "M 50,60"; no horizontal subpath ("M 0,...").
+$dv = New-GridPathData 100 60 200 4 0 50
+Assert-Eq ([regex]::Matches($dv, 'M ').Count) 5 "rows=0 yields cols+1 verticals only"
+Assert-True (-not $dv.Contains('M 0,')) "rows=0 emits no horizontal subpaths"
+
 # Degenerate inputs are coerced, never throw / divide by zero.
 $d2 = New-GridPathData 100 50 150 0 0 50
-Assert-True ($d2.StartsWith('M')) "cols<1 / rows<1 still yields a path"
+Assert-True ($d2.StartsWith('M')) "cols<1 / negative rows still yields a path"
 
 # Mountain ridge: closed silhouette across width 100, base y=80, peak y=20, 2 peaks.
 # Peak p spans w/peaks; apex at its centre (peakY), valley at its right edge (baseY).

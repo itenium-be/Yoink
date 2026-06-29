@@ -5,13 +5,14 @@
 # XAML path geometry for a receding perspective grid: `cols`+1 vertical threads
 # fanning from the vanishing point (vanishX, horizonY) to evenly-spaced points along
 # the bottom edge, plus `rows` full-width horizontal threads whose spacing tightens
-# toward the horizon (y = horizonY + (bottomY-horizonY) * (r/rows)^2). One combined
+# toward the horizon (y = horizonY + (bottomY-horizonY) * (r/rows)^2); pass rows = 0
+# for vertical rays only (the live grid animates its own horizontals). One combined
 # Path data string (multiple M subpaths), stroked.
 # Invariant culture: XAML needs '.' decimals; nl-BE would emit ',' and choke Parse.
 function New-GridPathData([double]$w, [double]$horizonY, [double]$bottomY, [int]$cols, [int]$rows, [double]$vanishX) {
   $ic = [System.Globalization.CultureInfo]::InvariantCulture
   if ($cols -lt 1) { $cols = 1 }
-  if ($rows -lt 1) { $rows = 1 }
+  if ($rows -lt 0) { $rows = 0 }   # rows = 0 -> vertical rays only, no horizontal threads
   $f = { param($v) ([double]$v).ToString('0.##', $ic) }
   $sb = New-Object System.Text.StringBuilder
   for ($c = 0; $c -le $cols; $c++) {
@@ -142,27 +143,72 @@ function Add-VaporwaveMountains($canvas, [double]$w, [double]$h, [double]$opacit
   $canvas.Children.Add($path) | Out-Null
 }
 
-# Receding neon perspective grid from the horizon to the bottom edge, scrolling
-# gently toward the viewer. The seamless-scroll is approximate: translate down by
-# the nearest-row spacing on a short loop (a subtle backdrop, not a precise floor).
+# Receding neon perspective grid, "riding the floor" outrun style. The vertical rays
+# converge to the vanishing point on the horizon and stay FIXED; the horizontal lines
+# flow toward the viewer — emerging faint at the horizon and accelerating to the bottom
+# on a quadratic perspective curve (y = horizon + span * t^2), so they tighten/slow far
+# away and spread/rush up close. Each rides one cycle then loops; they are staggered so
+# the floor is always covered, and the group is clipped to the card so lines vanish at
+# the bottom edge and the wrap back to the horizon happens off-screen (seamless).
 function Add-VaporwaveGrid($canvas, [double]$w, [double]$h, [double]$opacity, [double]$speed) {
   $horizon = $h * 0.52
-  $rows = 8
-  $data = New-GridPathData $w $horizon $h 12 $rows ($w * 0.5)
-  $path = New-Object System.Windows.Shapes.Path
-  $path.Data = [System.Windows.Media.Geometry]::Parse($data)
-  $path.Stroke = New-Brush '#FF01CDFE'
-  $path.StrokeThickness = 1.0
-  $path.Opacity = [Math]::Min(1.0, $opacity * 2.0)
-  [System.Windows.Controls.Canvas]::SetLeft($path, 0); [System.Windows.Controls.Canvas]::SetTop($path, 0)
-  $tt = New-Object System.Windows.Media.TranslateTransform
-  $path.RenderTransform = $tt
-  $canvas.Children.Add($path) | Out-Null
-  $rf = [double]($rows - 1) / $rows
-  $nearStep = ($h - $horizon) * (1.0 - $rf * $rf)
-  $drift = New-Object System.Windows.Media.Animation.DoubleAnimation 0, $nearStep, ([System.Windows.Duration][TimeSpan]::FromSeconds(2.6 / $speed))
-  $drift.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-  $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::YProperty, $drift)
+  $span = $h - $horizon
+  $op = [Math]::Min(1.0, $opacity * 2.0)
+  $neon = '#FF01CDFE'
+
+  $grid = New-Object System.Windows.Controls.Canvas
+  $grid.Width = $w; $grid.Height = $h; $grid.ClipToBounds = $true   # horizontals exit at the bottom edge
+  [System.Windows.Controls.Canvas]::SetLeft($grid, 0); [System.Windows.Controls.Canvas]::SetTop($grid, 0)
+  $canvas.Children.Add($grid) | Out-Null
+
+  # Static vertical rays: vanishing point -> evenly spaced bottom points (rows = 0).
+  $verts = New-Object System.Windows.Shapes.Path
+  $verts.Data = [System.Windows.Media.Geometry]::Parse((New-GridPathData $w $horizon $h 12 0 ($w * 0.5)))
+  $verts.Stroke = New-Brush $neon
+  $verts.StrokeThickness = 1.0
+  $verts.Opacity = $op
+  $grid.Children.Add($verts) | Out-Null
+
+  # Flowing horizontals: full-width lines translated from the horizon to just past the
+  # bottom along t^2, looping forever, phase-staggered by a negative BeginTime.
+  $rows = 14
+  $cycle = 5.0 / $speed
+  $steps = 14
+  for ($i = 0; $i -lt $rows; $i++) {
+    $line = New-Object System.Windows.Shapes.Line
+    $line.X1 = 0; $line.X2 = $w; $line.Y1 = 0; $line.Y2 = 0
+    $line.Stroke = New-Brush $neon
+    $line.StrokeThickness = 1.0
+    $line.Opacity = 0
+    $tt = New-Object System.Windows.Media.TranslateTransform 0, $horizon
+    $line.RenderTransform = $tt
+    $grid.Children.Add($line) | Out-Null
+
+    $dur = [System.Windows.Duration][TimeSpan]::FromSeconds($cycle)
+    $begin = [TimeSpan]::FromSeconds( -($i / [double]$rows) * $cycle )
+
+    # Y: horizon -> h + a hair (clipped) along the perspective curve.
+    $move = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
+    $move.Duration = $dur; $move.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $move.BeginTime = $begin
+    for ($k = 0; $k -le $steps; $k++) {
+      $t = $k / [double]$steps
+      $y = $horizon + ($span * 1.06) * $t * $t
+      $kt = [System.Windows.Media.Animation.KeyTime][TimeSpan]::FromSeconds($cycle * $t)
+      $move.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame $y, $kt)) | Out-Null
+    }
+    $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::YProperty, $move)
+
+    # Opacity: fade in at the horizon so a line never pops into existence; full brightness
+    # the rest of the way (the bottom wrap is hidden by the clip, off-screen).
+    $fade = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
+    $fade.Duration = $dur; $fade.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $fade.BeginTime = $begin
+    $fade.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame 0.0, ([System.Windows.Media.Animation.KeyTime][TimeSpan]::FromSeconds(0)))) | Out-Null
+    $fade.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame $op,  ([System.Windows.Media.Animation.KeyTime][TimeSpan]::FromSeconds($cycle * 0.15)))) | Out-Null
+    $fade.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame $op,  ([System.Windows.Media.Animation.KeyTime][TimeSpan]::FromSeconds($cycle)))) | Out-Null
+    $line.BeginAnimation([System.Windows.UIElement]::OpacityProperty, $fade)
+  }
 }
 
 # Angular palm silhouettes framing the bottom corners. Straight-segment fronds drawn
