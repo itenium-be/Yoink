@@ -67,8 +67,8 @@
           }
         },
         "sound": {
-          "enum": ["asterisk", "exclamation", ""],
-          "description": "Windows system sound. Empty = built-in default; any other value falls back to asterisk."
+          "type": "boolean",
+          "description": "Master toggle: play this event's themed sound."
         },
         "body": {
           "type": "array",
@@ -160,6 +160,15 @@
           "type": "string",
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "description": "Card background colour (#RRGGBB)."
+        },
+        "sound": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Wav filenames (relative to sounds/) played per event. Empty = silent.",
+          "properties": {
+            "done": { "type": "string" },
+            "needs-input": { "type": "string" }
+          }
         },
         "scene": { "$ref": "#/definitions/scene" }
       }
