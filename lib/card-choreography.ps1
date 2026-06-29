@@ -1,5 +1,5 @@
 # Mascot + scene choreography for an already-laid-out card. $box is the bag from
-# New-NotificationBox (or a card hosted elsewhere). $Root is the repo root (for mascot art).
+# New-NotificationBox (or a card hosted elsewhere); mascot art is resolved from $PSScriptRoot.
 # Requires the mascot-*, scene-* libs to be dot-sourced by the caller.
 function Start-CardChoreography($box, $theme, $ev) {
   # Normalized frames share one canvas; the creature sits at a fixed anchor inside it
