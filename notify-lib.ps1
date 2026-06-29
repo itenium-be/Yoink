@@ -67,12 +67,37 @@ function New-HeroStops([string[]]$colors) {
   ($out -join "`n")
 }
 
+# Strip // line and /* block */ comments so settings.json can be annotated (JSONC).
+# Windows PowerShell's ConvertFrom-Json has no -AllowComments. String-aware: a // or
+# /* inside a "string" (e.g. an https:// URL) is left intact, and \" doesn't end the
+# string. Trailing commas are NOT handled — this only removes comments.
+function Remove-JsonComments([string]$text) {
+  $sb = New-Object System.Text.StringBuilder
+  $inStr = $false; $esc = $false; $line = $false; $block = $false
+  for ($i = 0; $i -lt $text.Length; $i++) {
+    $c = $text[$i]
+    $n = if ($i + 1 -lt $text.Length) { $text[$i + 1] } else { [char]0 }
+    if ($line)  { if ($c -eq "`n") { $line = $false; [void]$sb.Append($c) }; continue }
+    if ($block) { if ($c -eq '*' -and $n -eq '/') { $block = $false; $i++ }; continue }
+    if ($inStr) {
+      [void]$sb.Append($c)
+      if ($esc) { $esc = $false } elseif ($c -eq '\') { $esc = $true } elseif ($c -eq '"') { $inStr = $false }
+      continue
+    }
+    if ($c -eq '"') { $inStr = $true; [void]$sb.Append($c); continue }
+    if ($c -eq '/' -and $n -eq '/') { $line = $true; $i++; continue }
+    if ($c -eq '/' -and $n -eq '*') { $block = $true; $i++; continue }
+    [void]$sb.Append($c)
+  }
+  $sb.ToString()
+}
+
 # Load settings.json from $Dir if present; otherwise return built-in defaults. Never throws.
 function Get-NotifyConfig([string]$Dir) {
   $path = Join-Path $Dir 'settings.json'
   if (Test-Path $path) {
     try {
-      return (Get-Content -Raw -Encoding UTF8 $path | ConvertFrom-Json)
+      return (Remove-JsonComments (Get-Content -Raw -Encoding UTF8 $path) | ConvertFrom-Json)
     } catch {
       Write-Warning "notify: failed to parse settings.json: $($_.Exception.Message)"
     }

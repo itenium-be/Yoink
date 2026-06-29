@@ -2,12 +2,18 @@
 # Validates settings.json parses and exposes the expected structure.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-F="$ROOT/settings.json"
+RAW="$ROOT/settings.json"
+# Validate against a comment-stripped copy: settings.json is JSONC (the runtime
+# strips comments before parsing), so jq must see it the same way.
+F="$(mktemp)"; trap 'rm -f "$F"' EXIT
+python3 "$ROOT/tests/strip-jsonc.py" < "$RAW" > "$F"
 fail=0
 check() { if eval "$2"; then echo "ok: $1"; else echo "FAIL: $1"; fail=1; fi; }
 
-check "file exists"            "[[ -f '$F' ]]"
-check "valid json"            "jq -e . '$F' >/dev/null"
+check "file exists"            "[[ -f '$RAW' ]]"
+check "valid jsonc"           "jq -e . '$F' >/dev/null"
+check "jsonc strips comments"  "printf '{\n  // pick\n  \"a\": 1 /* x */\n}' | python3 '$ROOT/tests/strip-jsonc.py' | jq -e '.a==1' >/dev/null"
+check "jsonc keeps // in strings" "printf '{\"u\":\"http://x//y\"}' | python3 '$ROOT/tests/strip-jsonc.py' | jq -e '.u==\"http://x//y\"' >/dev/null"
 check "activeTheme present"   "jq -e '.activeTheme' '$F' >/dev/null 2>&1"
 check "activeTheme names a real theme" "jq -e '.themes[.activeTheme]' '$F' >/dev/null 2>&1"
 check "9 themes"              "[[ \"\$(jq '.themes|length' '$F')\" == '9' ]]"
@@ -22,7 +28,7 @@ check "cosmic has space scene" "[[ \"\$(jq -r '.themes.cosmic.scene.kind // empt
 check "cosmic scene has stars+nebula+comets" "[[ \"\$(jq -rc '[.themes.cosmic.scene.stars,.themes.cosmic.scene.nebula,.themes.cosmic.scene.comets]' '$F')\" == '[true,true,true]' ]]"
 check "matrix has matrix scene" "[[ \"\$(jq -r '.themes.matrix.scene.kind // empty' '$F')\" == 'matrix' ]]"
 check "matrix scene streaks is boolean" "[[ \"\$(jq -r '.themes.matrix.scene.streaks|type' '$F')\" == 'boolean' ]]"
-check "matrix hero uses object form" "[[ \"\$(jq -r '.themes.matrix.hero.emoji // empty' '$F')\" == '🐇' ]]"
-check "matrix hero is fixed white" "[[ \"\$(jq -r '.themes.matrix.hero.color // empty' '$F')\" == 'white' ]]"
+check "matrix hero uses object form" "[[ \"\$(jq -r '.themes.matrix.hero|type' '$F')\" == 'object' ]]"
+check "matrix hero has emoji + fixed fill" "jq -e '.themes.matrix.hero | .emoji and (.color // .colors)' '$F' >/dev/null"
 
 exit $fail

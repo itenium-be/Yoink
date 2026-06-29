@@ -45,6 +45,15 @@ Assert-Eq (New-HeroStops @('#12', 'white')) `
   "<GradientStop Color=`"white`" Offset=`"0`"/>`n<GradientStop Color=`"white`" Offset=`"1`"/>" `
   "hero skips invalid colour token"
 
+# --- Remove-JsonComments: JSONC support (// line + /* block */), string-aware ---
+$jc = "{`n  // pick one`n  `"a`": 1,`n  `"b`": 2 /* inline */`n}"
+Assert-Eq ((Remove-JsonComments $jc | ConvertFrom-Json).a) 1 "line + block comments stripped (a)"
+Assert-Eq ((Remove-JsonComments $jc | ConvertFrom-Json).b) 2 "line + block comments stripped (b)"
+# A // inside a string (e.g. a URL) must survive untouched.
+Assert-Eq ((Remove-JsonComments '{ "u": "http://x//y" }' | ConvertFrom-Json).u) 'http://x//y' "// inside string preserved"
+# An escaped quote must not prematurely end the string scan.
+Assert-Eq ((Remove-JsonComments '{ "u": "a\"// b" }' | ConvertFrom-Json).u) 'a"// b' "escaped quote keeps string open"
+
 # --- Resolution (inline fixture). The SHIPPED settings.json is validated structurally
 # by tests/settings.Tests.sh; resolving against a fixture keeps these green no matter
 # how a user edits their own settings.json. ---

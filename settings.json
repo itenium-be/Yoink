@@ -1,5 +1,5 @@
 {
-  "activeTheme": "matrix",
+  "activeTheme": "sakura",
   "events": {
     "needs-input": {
       "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": "",
@@ -52,7 +52,8 @@
       "card": "#1A1620"
     },
     "matrix": {
-      "hero": "👾",
+      // "hero": { "emoji": "🐇", "color": "white" },
+      "hero": { "emoji": "💊", "colors": ["#EF4444","#3B82F6"] },
       "gradient": ["#00FF41 0", "#22C55E 0.35", "#16A34A 0.6", "#00C853 0.8", "#39FF14 1"],
       "rim": ["#052E16 0", "#14532D 0.25", "#16A34A 0.5", "#22C55E 0.75", "#4ADE80 1"],
       "card": "#050A05",
