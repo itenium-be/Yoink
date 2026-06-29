@@ -54,7 +54,8 @@ function ConvertTo-ModelValue([string]$Kind, $Raw) {
     'number'   {
       if ([string]$Raw -match '^-?\d+$') { return [int]$Raw }
       $d = 0.0
-      if ([double]::TryParse([string]$Raw, [ref]$d)) { return $d }
+      # Invariant culture: JSON numbers are '.'-decimal regardless of the host locale.
+      if ([double]::TryParse([string]$Raw, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$d)) { return $d }
       return $Raw
     }
     default    { return [string]$Raw }

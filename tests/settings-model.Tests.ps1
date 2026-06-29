@@ -34,4 +34,13 @@ Assert-Eq (ConvertTo-ModelValue 'number' '22') 22 "number int"
 Assert-Eq (ConvertTo-ModelValue 'number' '1.5') 1.5 "number double"
 Assert-Eq (ConvertTo-ModelValue 'text' 42) '42' "text -> string"
 
+# --- number parse is locale-independent (nl-BE uses ',' as decimal separator) ---
+$prev = [System.Threading.Thread]::CurrentThread.CurrentCulture
+try {
+  [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]'nl-BE'
+  Assert-Eq (ConvertTo-ModelValue 'number' '1.5') 1.5 "number double under nl-BE culture"
+} finally {
+  [System.Threading.Thread]::CurrentThread.CurrentCulture = $prev
+}
+
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }
