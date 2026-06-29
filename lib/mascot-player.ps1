@@ -5,13 +5,11 @@ function Start-Flipbook {
     [System.Windows.Controls.Image]$Image,
     [string]$Dir,
     [int]$Fps = 30,
-    [double]$Size = 0,   # rendered height in px; 0 = leave the Image's current size
     [switch]$Loop,
     [scriptblock]$OnDone
   )
   $files = @(Get-ChildItem -Path $Dir -Filter 'frame_*.png' -ErrorAction SilentlyContinue | Sort-Object Name)
   if ($files.Count -eq 0) { if ($OnDone) { & $OnDone }; return }
-  if ($Size -gt 0) { $Image.Width = [double]::NaN; $Image.Height = $Size }
   $frames = foreach ($f in $files) {
     $bi = New-Object System.Windows.Media.Imaging.BitmapImage
     $bi.BeginInit()

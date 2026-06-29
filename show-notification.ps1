@@ -27,6 +27,7 @@ if ($DryRun) {
     $dir = Join-Path $PSScriptRoot "mascots\$d"
     if (-not (Test-Path $dir)) { Write-Error "missing mascot dir: $dir"; exit 1 }
   }
+  if (-not (Test-Path (Join-Path $PSScriptRoot 'mascots\anchor.json'))) { Write-Error "missing anchor.json"; exit 1 }
   Write-Output ("screen={0} wa={1},{2},{3}x{4}" -f $screen.DeviceName,$wa.Left,$wa.Top,$wa.Width,$wa.Height); return
 }
 
@@ -62,6 +63,15 @@ try {
 # --- Build the window ---
 $box = New-NotificationBox -Event $Event -Folder $Folder -WorkArea $wa
 $win = $box.Win
+
+# Normalized frames share one canvas; the creature sits at a fixed anchor inside it
+# (torso-centre x, feet-baseline y). One display height drives every phase.
+$anchor = Get-Content (Join-Path $PSScriptRoot 'mascots\anchor.json') -Raw | ConvertFrom-Json
+$box.AnchorX = [double]$anchor.anchorX
+$box.AnchorY = [double]$anchor.anchorY
+$box.MascotH = 243.0
+$box.MascotW = $box.MascotH * $anchor.canvasW / $anchor.canvasH
+$box.Mascot.Height = $box.MascotH   # Stretch=Uniform -> width follows the canvas aspect
 
 # --- Mascot choreography: look around -> jump onto the top edge -> celebrate ---
 # Started from Loaded because slot/card positions are known only after layout.
