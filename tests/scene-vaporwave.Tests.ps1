@@ -31,4 +31,24 @@ Assert-True (-not $d.Contains('33,33')) "does not use ',' decimal separator"
 $d2 = New-GridPathData 100 50 150 0 0 50
 Assert-True ($d2.StartsWith('M')) "cols<1 / rows<1 still yields a path"
 
+# Mountain ridge: closed silhouette across width 100, base y=80, peak y=20, 2 peaks.
+# Peak p spans w/peaks; apex at its centre (peakY), valley at its right edge (baseY).
+#   p=0 -> apex (25,20), valley (50,80) ; p=1 -> apex (75,20), valley (100,80).
+$m = New-MountainPathData 100 80 20 2
+Assert-True ($m.StartsWith('M 0,80')) "mountain path starts at the left base (0,80)"
+Assert-True ($m.EndsWith('Z'))        "mountain path is closed (filled silhouette ends with Z)"
+Assert-True ($m.Contains('L 25,20'))  "first apex at peakY (25,20)"
+Assert-True ($m.Contains('L 75,20'))  "second apex at peakY (75,20)"
+Assert-True ($m.Contains('L 50,80'))  "interior valley returns to baseY (50,80)"
+Assert-True ($m.Contains('L 100,80')) "ridge spans the full width back to base"
+
+# Invariant decimals: a 3-peak ridge puts the first apex at 100*0.5/3 = 16.67.
+$m2 = New-MountainPathData 100 80 20 3
+Assert-True ($m2.Contains('16.67')) "uses '.' decimal separator"
+Assert-True (-not $m2.Contains('16,67')) "does not use ',' decimal separator"
+
+# Degenerate peaks are coerced, never loop forever.
+$m3 = New-MountainPathData 100 80 20 0
+Assert-True ($m3.StartsWith('M')) "peaks<1 still yields a path"
+
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }
