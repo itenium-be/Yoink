@@ -5,7 +5,6 @@ param(
   [switch]$SelfTest,      # build the window + one synchronous rebuild, then exit (no message loop)
   [string]$SaveTo = ''    # with -DryRun: serialize the model to this path and exit
 )
-Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 . (Join-Path $PSScriptRoot 'lib\settings-model.ps1')
@@ -26,6 +25,7 @@ if ($DryRun) {
 }
 
 # --- WPF + card renderer libs (only needed for the live window / self-test) ---
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 . (Join-Path $PSScriptRoot 'lib\notification-box.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-player.ps1')
 . (Join-Path $PSScriptRoot 'lib\mascot-clip.ps1')
@@ -78,6 +78,11 @@ function Request-Rebuild { $script:rebuildTimer.Stop(); $script:rebuildTimer.Sta
 # (script-scoped) so it and its dot-sourced callees stay visible; refs kept at script scope
 # for the grid's Loaded handler (which runs after this returns).
 function Invoke-Rebuild {
+  # KNOWN v1 LIMITATION: each rebuild spawns a fresh card whose mascot DispatcherTimer and
+  # scene/rim "Forever" animations keep running on the shared Dispatcher even after the old
+  # grid is detached (clocks/timers aren't tied to the visual tree). Repeated edits therefore
+  # accumulate looping animations -> growing CPU over a long session. Proper teardown
+  # (tracking + stopping each box's clocks) is deferred; restart the editor if it gets sluggish.
   $script:cardHost.Children.Clear()
   $themeName = [string](Get-ModelValue $script:model @('activeTheme'))
   if (-not $themeName -or $themeName -eq 'random' -or -not ($script:themeNames -contains $themeName)) { $themeName = $script:selectedTheme }
