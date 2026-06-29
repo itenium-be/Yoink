@@ -16,6 +16,7 @@ case "$*" in
 esac
 EOF
 chmod +x "$TMP/bin/powershell.exe"
+ORIG_PATH="$PATH"
 export PATH="$TMP/bin:$PATH"
 export CLAUDE_NOTIFY_PS_CAPTURE="capture-window.ps1"
 export CLAUDE_NOTIFY_PS_SHOW="show-notification.ps1"
@@ -56,6 +57,11 @@ ok "fire needs-input event" 'grep -q -- "-Event needs-input" "$CLAUDE_NOTIFY_DIR
 
 # --- mascot outline step ---
 ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
+
+# settings-model (pure PS) + editor seam need the REAL powershell, not the hook stub.
+PATH="$ORIG_PATH"
+ok "settings model" 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$(dirname "$0")/settings-model.Tests.ps1")" >/dev/null 2>&1'
+ok "settings editor seam" 'bash "$(dirname "$0")/settings-editor.Tests.sh" >/dev/null 2>&1'
 
 echo "----"; echo "$pass passed, $fail failed"
 [[ $fail -eq 0 ]]

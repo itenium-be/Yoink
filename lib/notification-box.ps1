@@ -29,6 +29,72 @@ function Start-Fireworks($canvas, $colors) {
   }
 }
 
+# Load-time card setup that is independent of any hosting Window: corner-clip, rim spin,
+# fireworks, and the body-line marquee. Call AFTER the card has been laid out (its Loaded),
+# whether it lives in the notification Window or is hosted inside the settings editor.
+function Initialize-NotificationCard($box) {
+  $card = $box.Card
+  # Round-clip the card so edge-bleeding content follows the corner radius (a Border
+  # with CornerRadius does NOT clip its children to the rounded shape on its own).
+  if ($card) {
+    $cg = New-Object System.Windows.Media.RectangleGeometry
+    $cg.Rect = New-Object System.Windows.Rect 0, 0, $card.ActualWidth, $card.ActualHeight
+    $cg.RadiusX = 21; $cg.RadiusY = 21
+    $card.Clip = $cg
+  }
+
+  $rimBrush = $box.RimBrush
+  if ($rimBrush) {
+    $rot = New-Object System.Windows.Media.RotateTransform
+    $rot.CenterX = 0.5; $rot.CenterY = 0.5
+    $rimBrush.RelativeTransform = $rot
+    $spin = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 360, ([System.Windows.Duration][TimeSpan]::FromSeconds(4))
+    $spin.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $rot.BeginAnimation([System.Windows.Media.RotateTransform]::AngleProperty, $spin)
+  }
+  if ($box.Ev.indicator -eq 'fireworks') { Start-Fireworks ($box.Fx) (@(Get-StopColors $box.Theme.gradient)) }
+
+  foreach ($tb in $box.BodyTbs) {
+    $avail = $tb.ActualWidth
+    if ($avail -le 0) { continue }
+    $ft = New-Object System.Windows.Media.FormattedText(
+      $tb.Text, [System.Globalization.CultureInfo]::CurrentCulture, [System.Windows.FlowDirection]::LeftToRight,
+      (New-Object System.Windows.Media.Typeface($tb.FontFamily, $tb.FontStyle, $tb.FontWeight, $tb.FontStretch)),
+      $tb.FontSize, [System.Windows.Media.Brushes]::Black)
+    if ($ft.WidthIncludingTrailingWhitespace -le $avail + 1) { continue }
+    $full = $ft.WidthIncludingTrailingWhitespace
+    $tb.ToolTip = $tb.Text
+
+    # Clip a viewport at the current width, let the text run full-width inside it, and
+    # ping-pong a TranslateTransform so the hidden tail scrolls into view.
+    $panel = $tb.Parent
+    $idx = $panel.Children.IndexOf($tb)
+    $vp = New-Object System.Windows.Controls.Grid
+    $vp.Width = $avail; $vp.Height = $tb.ActualHeight; $vp.HorizontalAlignment = 'Left'
+    $vp.ClipToBounds = $true; $vp.Margin = $tb.Margin
+    $panel.Children.RemoveAt($idx)
+    $tb.Margin = (New-Object System.Windows.Thickness 0)
+    $tb.HorizontalAlignment = 'Left'
+    $tb.TextTrimming = [System.Windows.TextTrimming]::None
+    $tb.TextWrapping = [System.Windows.TextWrapping]::NoWrap
+    $tt = New-Object System.Windows.Media.TranslateTransform
+    $tb.RenderTransform = $tt
+    $vp.Children.Add($tb) | Out-Null
+    $panel.Children.Insert($idx, $vp)
+
+    $travel = -($full - $avail + 6)
+    $scroll = [int]([Math]::Abs($travel) * 12)   # ~12ms per px
+    $kf = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
+    $kf.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+    $stops = @(@(0, 0), @(1500, 0), @((1500 + $scroll), $travel), @((3000 + $scroll), $travel), @((3000 + 2 * $scroll), 0))
+    foreach ($s in $stops) {
+      $kt = [System.Windows.Media.Animation.KeyTime]::FromTimeSpan([TimeSpan]::FromMilliseconds($s[0]))
+      $kf.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame([double]$s[1], $kt))) | Out-Null
+    }
+    $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::XProperty, $kf)
+  }
+}
+
 function New-NotificationBox {
   param(
     [string]$Event = 'done',
@@ -181,16 +247,17 @@ function New-NotificationBox {
     $footerPanel.Children.Add($pill) | Out-Null
   }
 
+  $box = @{
+    Win = $win; Card = $win.FindName('card'); Slot = $win.FindName('slot')
+    Overlay = $win.FindName('overlay'); Mascot = $win.FindName('mascot')
+    Scene = $win.FindName('scene'); RimBrush = $win.FindName('rimBrush'); Fx = $win.FindName('fx')
+    BodyTbs = $bodyTbs; Theme = $Theme; Ev = $Ev
+    Event = $Event
+  }
+
   $win.Add_Loaded({
-    # Round-clip the card so edge-bleeding content follows the corner radius (a Border
-    # with CornerRadius does NOT clip its children to the rounded shape on its own).
-    $card = $win.FindName('card')
-    if ($card) {
-      $cg = New-Object System.Windows.Media.RectangleGeometry
-      $cg.Rect = New-Object System.Windows.Rect 0, 0, $card.ActualWidth, $card.ActualHeight
-      $cg.RadiusX = 21; $cg.RadiusY = 21
-      $card.Clip = $cg
-    }
+    Initialize-NotificationCard $box
+    # Window-only: position bottom-right of the work area and fade in.
     $src = [System.Windows.PresentationSource]::FromVisual($win)
     $sx = $src.CompositionTarget.TransformToDevice.M11
     $sy = $src.CompositionTarget.TransformToDevice.M22
@@ -199,66 +266,7 @@ function New-NotificationBox {
     $win.Top  = ($WorkArea.Bottom - $hpx - $pad) / $sy
     $fade = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 1, ([System.Windows.Duration][TimeSpan]::FromMilliseconds(250))
     $win.BeginAnimation([System.Windows.Window]::OpacityProperty, $fade)
-
-    # Continuously rotate the rainbow rim so the colours travel around the border.
-    $rimBrush = $win.FindName('rimBrush')
-    if ($rimBrush) {
-      $rot = New-Object System.Windows.Media.RotateTransform
-      $rot.CenterX = 0.5; $rot.CenterY = 0.5
-      $rimBrush.RelativeTransform = $rot
-      $spin = New-Object System.Windows.Media.Animation.DoubleAnimation 0, 360, ([System.Windows.Duration][TimeSpan]::FromSeconds(4))
-      $spin.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-      $rot.BeginAnimation([System.Windows.Media.RotateTransform]::AngleProperty, $spin)
-    }
-    if ($Ev.indicator -eq 'fireworks') { Start-Fireworks ($win.FindName('fx')) (@(Get-StopColors $Theme.gradient)) }
-
-    # Reveal overflowing body lines: a tooltip with the full text + a gentle ping-pong
-    # marquee so the trimmed tail can be read. Needs a layout pass (ActualWidth), hence here.
-    foreach ($tb in $bodyTbs) {
-      $avail = $tb.ActualWidth
-      if ($avail -le 0) { continue }
-      $ft = New-Object System.Windows.Media.FormattedText(
-        $tb.Text, [System.Globalization.CultureInfo]::CurrentCulture, [System.Windows.FlowDirection]::LeftToRight,
-        (New-Object System.Windows.Media.Typeface($tb.FontFamily, $tb.FontStyle, $tb.FontWeight, $tb.FontStretch)),
-        $tb.FontSize, [System.Windows.Media.Brushes]::Black)
-      if ($ft.WidthIncludingTrailingWhitespace -le $avail + 1) { continue }   # fits, no ellipsis
-      $full = $ft.WidthIncludingTrailingWhitespace
-      $tb.ToolTip = $tb.Text
-
-      # Clip a viewport at the current width, let the text run full-width inside it, and
-      # ping-pong a TranslateTransform so the hidden tail scrolls into view.
-      $panel = $tb.Parent
-      $idx = $panel.Children.IndexOf($tb)
-      $vp = New-Object System.Windows.Controls.Grid
-      $vp.Width = $avail; $vp.Height = $tb.ActualHeight; $vp.HorizontalAlignment = 'Left'
-      $vp.ClipToBounds = $true; $vp.Margin = $tb.Margin
-      $panel.Children.RemoveAt($idx)
-      $tb.Margin = (New-Object System.Windows.Thickness 0)
-      $tb.HorizontalAlignment = 'Left'
-      $tb.TextTrimming = [System.Windows.TextTrimming]::None
-      $tb.TextWrapping = [System.Windows.TextWrapping]::NoWrap
-      $tt = New-Object System.Windows.Media.TranslateTransform
-      $tb.RenderTransform = $tt
-      $vp.Children.Add($tb) | Out-Null
-      $panel.Children.Insert($idx, $vp)
-
-      $travel = -($full - $avail + 6)
-      $scroll = [int]([Math]::Abs($travel) * 12)   # ~12ms per px
-      $kf = New-Object System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames
-      $kf.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-      $stops = @(@(0, 0), @(1500, 0), @((1500 + $scroll), $travel), @((3000 + $scroll), $travel), @((3000 + 2 * $scroll), 0))
-      foreach ($s in $stops) {
-        $kt = [System.Windows.Media.Animation.KeyTime]::FromTimeSpan([TimeSpan]::FromMilliseconds($s[0]))
-        $kf.KeyFrames.Add((New-Object System.Windows.Media.Animation.LinearDoubleKeyFrame([double]$s[1], $kt))) | Out-Null
-      }
-      $tt.BeginAnimation([System.Windows.Media.TranslateTransform]::XProperty, $kf)
-    }
   }.GetNewClosure())
 
-  return @{
-    Win = $win; Card = $win.FindName('card'); Slot = $win.FindName('slot')
-    Overlay = $win.FindName('overlay'); Mascot = $win.FindName('mascot')
-    Scene = $win.FindName('scene')
-    Event = $Event
-  }
+  return $box
 }

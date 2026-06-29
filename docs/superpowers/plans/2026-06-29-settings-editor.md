@@ -422,6 +422,15 @@ git commit -m "Extract Initialize-NotificationCard from notification window load
 
 ## Task 4: Extract `Start-CardChoreography`
 
+> **Execution correction (the plan body below is stale):** the repo gained a `unicorn`
+> scene after this plan was written. The real `show-notification.ps1` has a FIVE-entry
+> `$sceneKinds` (incl. `unicorn = { ... Start-Unicorn ... }`) and FIVE extra `$sceneCfg`
+> props beyond `parallax` (`aurora`, `rainbow`, `glitter`, `sparkles`, `shootingStar`), plus
+> a `lib\scene-unicorn.ps1` dot-source. **Move the CURRENT inlined code verbatim** (incl.
+> unicorn), not the 4-kind body printed below. Also wire the `Add_Loaded` with a **plain
+> scriptblock, NOT `.GetNewClosure()`** — the closure form rebinds scope so the dot-sourced
+> phase/scene functions become invisible (there's an existing WHY comment about this).
+
 **Files:**
 - Create: `lib/card-choreography.ps1`
 - Modify: `show-notification.ps1` (remove inlined anchor/geometry block + the two `Add_Loaded` choreography blocks; add the call)
@@ -539,6 +548,25 @@ git commit -m "Extract Start-CardChoreography shared by notifier and editor"
 ---
 
 ## Task 5: The editor window `settings-editor.ps1` + `-DryRun` seam
+
+> **Execution correction (closure scope — the code below uses `.GetNewClosure()` everywhere,
+> which will BREAK at runtime):** a `.GetNewClosure()` scriptblock rebinds to a module scope
+> that cannot see dot-sourced (script-scoped) functions like `Set-ModelValue`,
+> `Initialize-NotificationCard`, `Start-CardChoreography`. Use this strategy instead:
+> - Dot-source **`lib\scene-unicorn.ps1`** too (the plan's dot-source list omits it).
+> - Keep the rebuilt card refs script-scoped: assign `$script:box/$script:theme/$script:ev`
+>   inside the rebuild so a **plain** scriptblock (no closure) can see both them and the
+>   dot-sourced functions. Register the debounce-timer `Add_Tick`, `Add_Loaded`, and the
+>   Save/Reload `Add_Click` as **plain** scriptblocks.
+> - For the per-control handlers in the `foreach` loop, do NOT use `.GetNewClosure()` to
+>   snapshot `$field`/`$c`. Instead stash the field descriptor on the control
+>   (`$c.Tag = $field`) and use ONE shared plain handler per kind that reads the sender's
+>   `.Tag` (e.g. `param($s,$e) $f=$s.Tag; Set-ModelValue $script:model $f.path ...`). Plain
+>   scriptblock → script scope → dot-sourced functions visible; `.Tag` carries per-control
+>   state without closure capture.
+> - Add a headless `-SelfTest` switch that builds the window and runs ONE synchronous
+>   rebuild (catching function-visibility / scope errors that `-DryRun` can't), then exits.
+>   Wire it into `tests/settings-editor.Tests.sh`.
 
 **Files:**
 - Create: `settings-editor.ps1`
