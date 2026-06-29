@@ -80,12 +80,9 @@
       "card": "#0E141B"
     },
     "spooky": {
-      // Two-tone orange bands keep the pumpkin reading as a pumpkin; a bare "🎃"
-      // string would fill with the theme gradient and bleed to purple at the base.
       "hero": { "emoji": "🎃", "colors": ["#FFB23A", "#EA5A0C"] },
-      // Alternative heroes — swap the "hero" line above for one of these:
-      //   ghost:    { "emoji": "👻", "color": "#E8E8F2" }
-      //   skeleton: { "emoji": "💀", "color": "#EDEAD6" }
+      // "hero": { "emoji": "👻", "color": "#E8E8F2" },
+      // "hero": { "emoji": "💀", "color": "#EDEAD6" },
       "gradient": ["#F97316 0", "#EA580C 0.3", "#7C2D12 0.55", "#6B21A8 0.8", "#4C1D95 1"],
       "rim": ["#7C2D12 0", "#9A3412 0.25", "#EA580C 0.5", "#6B21A8 0.75", "#4C1D95 1"],
       "card": "#100A14",
