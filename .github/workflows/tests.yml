@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# WPF (PresentationCore/PresentationFramework) and the powershell.exe-driven .sh
+# tests are Windows-only, so the suite can only run on a Windows runner.
+jobs:
+  test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash # git-bash; ships cygpath, jq, diff, comm, grep
+    steps:
+      - uses: actions/checkout@v4
+
+      # The .sh tests call `wslpath -w` (WSL-only) and `python3`. On a native
+      # Windows runner git-bash has neither, but cygpath is wslpath's equivalent
+      # and `python` is Python 3 — shim both onto PATH.
+      - name: Shim wslpath + python3
+        run: |
+          mkdir -p "$HOME/bin"
+          cat > "$HOME/bin/wslpath" <<'EOF'
+          #!/usr/bin/env bash
+          flag=""; case "$1" in -w|-m|-u|-a) flag="$1"; shift;; esac
+          exec cygpath $flag "$@"
+          EOF
+          printf '#!/usr/bin/env bash\nexec python "$@"\n' > "$HOME/bin/python3"
+          chmod +x "$HOME/bin/wslpath" "$HOME/bin/python3"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Run tests
+        run: |
+          set -uo pipefail
+          fail=0
+          # Windows PowerShell (5.1) is STA by default, which the WPF tests need.
+          for f in tests/*.Tests.ps1; do
+            out="$(powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$f")" 2>&1)"; rc=$?
+            if [[ $rc -ne 0 ]] || grep -qi 'FAIL' <<<"$out"; then
+              echo "::error::$f"; echo "$out"; fail=1
+            else echo "PASS $f"; fi
+          done
+          for f in tests/*.Tests.sh; do
+            out="$(bash "$f" 2>&1)"; rc=$?
+            if [[ $rc -ne 0 ]] || grep -qi 'FAIL' <<<"$out"; then
+              echo "::error::$f"; echo "$out"; fail=1
+            else echo "PASS $f"; fi
+          done
+          exit $fail

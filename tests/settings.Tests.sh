@@ -16,7 +16,8 @@ check "jsonc strips comments"  "printf '{\n  // pick\n  \"a\": 1 /* x */\n}' | p
 check "jsonc keeps // in strings" "printf '{\"u\":\"http://x//y\"}' | python3 '$ROOT/tests/strip-jsonc.py' | jq -e '.u==\"http://x//y\"' >/dev/null"
 check "activeTheme present"   "jq -e '.activeTheme' '$F' >/dev/null 2>&1"
 check "play-sound-when-terminal-is-active is boolean" "[[ \"\$(jq -r '.[\"play-sound-when-terminal-is-active\"]|type' '$F')\" == 'boolean' ]]"
-check "activeTheme names a real theme" "jq -e '.themes[.activeTheme]' '$F' >/dev/null 2>&1"
+# "random" is a valid sentinel (resolve a theme per-notification), not a theme key.
+check "activeTheme names a real theme or 'random'" "jq -e '.activeTheme==\"random\" or (.themes[.activeTheme]!=null)' '$F' >/dev/null 2>&1"
 check "9 themes"              "[[ \"\$(jq '.themes|length' '$F')\" == '9' ]]"
 check "unicorn theme"         "jq -e '.themes.unicorn' '$F' >/dev/null"
 check "needs-input body array" "jq -e '.events[\"needs-input\"].body|type==\"array\"' '$F' >/dev/null"
