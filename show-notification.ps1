@@ -28,6 +28,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-unicorn.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-spooky.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-dragon.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-robot.ps1')
 . (Join-Path $PSScriptRoot 'lib\card-choreography.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
