@@ -41,7 +41,12 @@ PS_SCRIPT="${CLAUDE_NOTIFY_PS_SHOW:-$(wslpath -w "$NOTIFY_DIR/show-notification.
 WSND=""
 [[ -f "$SND" ]] && WSND="$(wslpath -w "$SND" 2>/dev/null)"
 
+# Gather context tokens ({{message}}, {{branch}}, {{last_prompt}}, ...) for the body templates.
+CTX="$SESS_DIR/${SID:-nosid}.ctx.json"
+printf '%s' "$INPUT" | bash "$NOTIFY_DIR/notify-context.sh" "$EVENT" > "$CTX" 2>/dev/null || : > "$CTX"
+WCTX="$(wslpath -w "$CTX" 2>/dev/null)"
+
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" \
-  -Hwnd "$HWND" -Folder "$FOLDER" -Event "$EVENT" -Sound "$WSND" \
+  -Hwnd "$HWND" -Folder "$FOLDER" -Event "$EVENT" -Sound "$WSND" -Context "$WCTX" \
   >>"$LOG" 2>&1 &
 exit 0
