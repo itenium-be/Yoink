@@ -1,0 +1,1 @@
+{"session_id":"test-sid","cwd":"/tmp/notify-ctx-test","transcript_path":"TRANSCRIPT_PATH","message":"Claude needs your permission to use Bash","permission_mode":"default","hook_event_name":"Notification"}
