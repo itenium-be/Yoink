@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dependency-free tests for the notifier hooks. Stubs powershell.exe.
 set -uo pipefail
-HOOKS="$HOME/.claude/hooks"
+HOOKS="$(cd "$(dirname "$0")/.." && pwd)/hooks"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 export YOINK_DIR="$TMP/notify"
