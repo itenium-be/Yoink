@@ -2,7 +2,6 @@ param(
   [long]$Hwnd = 0,
   [string]$Folder = "",
   [string]$Event = "done",
-  [string]$Sound = "",
   [int]$Seconds = 0,   # 0 = stay until clicked or the target terminal is focused
   [string]$Context = "",
   [switch]$DryRun,
@@ -89,13 +88,15 @@ if ($Hwnd -ne 0) { try { [WinFocus]::Flash([IntPtr]$Hwnd) } catch {} }
 # Without a target window we can't auto-close on focus, so fall back to a timeout.
 if ($Hwnd -eq 0 -and $Seconds -le 0) { $Seconds = 15 }
 
-# --- Sound --- (an empty sound config means stay silent)
-if (-not [string]::IsNullOrWhiteSpace([string]$ev.sound)) {
-  try {
-    if ($Sound -and (Test-Path $Sound)) { (New-Object System.Media.SoundPlayer $Sound).Play() }
-    elseif ($ev.sound -eq 'exclamation') { [System.Media.SystemSounds]::Exclamation.Play() }
-    else { [System.Media.SystemSounds]::Asterisk.Play() }
-  } catch {}
+# --- Sound --- theme picks the wav; the event toggle gates it. Toggle off, no file, or
+# missing file => silent. (Resolution lives here, not in bash, because activeTheme "random"
+# only resolves once the card is built.)
+if ([bool]$ev.sound) {
+  $sndFile = if ($theme.sound) { [string](Get-Prop $theme.sound $Event) } else { '' }
+  if ($sndFile) {
+    $sndPath = Join-Path $PSScriptRoot "sounds\$sndFile"
+    if (Test-Path $sndPath) { try { (New-Object System.Media.SoundPlayer $sndPath).Play() } catch {} }
+  }
 }
 
 # --- Build the window ---
