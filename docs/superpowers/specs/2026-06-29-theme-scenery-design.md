@@ -84,6 +84,17 @@ the card's `ActualWidth` is known), exactly as `Start-Fireworks` is invoked.
 - Wave geometry is built in code by sampling `sin()` into a `PathFigure` with
   `LineSegment`s (smooth enough; avoids Bezier control-point math).
 
+Optional scene flags layer scenery above the waterline (drawn back-to-front:
+sky → sun → clouds → waves):
+
+| Flag     | Effect                                                                 |
+|----------|-----------------------------------------------------------------------|
+| `sky`    | continuous sky-glow (top) + sea-tint (bottom) gradients that meet at the horizon — no transparent band exposing the dark card |
+| `sun`    | soft radial sun with a slow opacity pulse (needs `sky`)                |
+| `clouds` | drifting clouds, randomized in size/height/speed and spread across the width via a negative animation phase (needs `sky`) |
+
+The `ocean` theme ships with all three enabled.
+
 ## Scene dispatch (`show-notification.ps1`)
 
 A small `kind → scriptblock` table in the orchestrator's `Loaded` handler:

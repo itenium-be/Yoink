@@ -17,5 +17,6 @@ check "done body array"       "jq -e '.events.done.body|type==\"array\"' '$F' >/
 check "every theme has hero/gradient/rim/card" \
   "[[ \"\$(jq '[.themes[]|select(.hero and .gradient and .rim and .card)]|length' '$F')\" == '9' ]]"
 check "ocean has waves scene" "[[ \"\$(jq -r '.themes.ocean.scene.kind // empty' '$F')\" == 'waves' ]]"
+check "ocean scene has sky+sun+clouds" "[[ \"\$(jq -rc '[.themes.ocean.scene.sky,.themes.ocean.scene.sun,.themes.ocean.scene.clouds]' '$F')\" == '[true,true,true]' ]]"
 
 exit $fail

@@ -42,7 +42,7 @@
       "gradient": ["#0EA5E9 0", "#22D3EE 0.3", "#2DD4BF 0.6", "#14B8A6 0.8", "#0891B2 1"],
       "rim": ["#0C4A6E 0", "#0369A1 0.25", "#0891B2 0.5", "#06B6D4 0.75", "#14B8A6 1"],
       "card": "#0A1620",
-      "scene": { "kind": "waves" }
+      "scene": { "kind": "waves", "sky": true, "sun": true, "clouds": true }
     },
     "sakura": {
       "hero": "🌸",

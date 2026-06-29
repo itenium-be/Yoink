@@ -156,8 +156,11 @@
           "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
           "items": { "$ref": "#/definitions/hexColor" }
         },
-        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Scene layer opacity (default 0.22)." },
-        "speed": { "type": "number", "exclusiveMinimum": 0, "description": "Animation speed multiplier (default 1.0)." }
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Wave layer opacity (default 0.22)." },
+        "speed": { "type": "number", "exclusiveMinimum": 0, "description": "Animation speed multiplier (default 1.0)." },
+        "sky": { "type": "boolean", "description": "Draw a sky+sea gradient above the waves." },
+        "sun": { "type": "boolean", "description": "Draw a glowing sun in the sky (needs \"sky\")." },
+        "clouds": { "type": "boolean", "description": "Draw drifting clouds in the sky (needs \"sky\")." }
       }
     }
   }

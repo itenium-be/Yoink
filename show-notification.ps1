@@ -140,6 +140,9 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     colors  = $sceneCols
     opacity = (Coalesce (Get-Prop $theme.scene 'opacity') 0.22)
     speed   = (Coalesce (Get-Prop $theme.scene 'speed')   1.0)
+    sky     = [bool](Get-Prop $theme.scene 'sky')
+    sun     = [bool](Get-Prop $theme.scene 'sun')
+    clouds  = [bool](Get-Prop $theme.scene 'clouds')
   }
 }
 $sceneKinds = @{ waves = { param($b, $c) Start-Waves $b $c } }
