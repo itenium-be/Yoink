@@ -93,5 +93,5 @@ Flash and auto-close on *this* terminal:
 ## Tests
 
 ```bash
-bash ~/.claude/notify/tests/run.sh
+bash ~/.claude/yoink/tests/run.sh
 ```

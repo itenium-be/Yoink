@@ -2,10 +2,10 @@
 # Stop/Notification hook. $1 = event: "done" | "needs-input".
 set -uo pipefail
 EVENT="${1:-done}"
-NOTIFY_DIR="${CLAUDE_NOTIFY_DIR:-$HOME/.claude/notify}"
-SESS_DIR="$NOTIFY_DIR/sessions"
-LOG="$NOTIFY_DIR/notify.log"
-mkdir -p "$SESS_DIR" "$NOTIFY_DIR/sounds"
+YOINK_DIR="${YOINK_DIR:-$HOME/.claude/yoink}"
+SESS_DIR="$YOINK_DIR/sessions"
+LOG="$YOINK_DIR/notify.log"
+mkdir -p "$SESS_DIR" "$YOINK_DIR/sounds"
 
 INPUT="$(cat)"
 SID="$(jq -r '.session_id // empty' <<<"$INPUT" 2>/dev/null)"
@@ -36,11 +36,11 @@ REC="$SESS_DIR/$SID.json"
 
 [[ "$EVENT" == "needs-input" ]] || EVENT="done"
 
-PS_SCRIPT="${CLAUDE_NOTIFY_PS_SHOW:-$(wslpath -w "$NOTIFY_DIR/show-notification.ps1" 2>/dev/null)}"
+PS_SCRIPT="${YOINK_PS_SHOW:-$(wslpath -w "$YOINK_DIR/show-notification.ps1" 2>/dev/null)}"
 
 # Gather context tokens ({{message}}, {{branch}}, {{last_prompt}}, ...) for the body templates.
 CTX="$SESS_DIR/${SID:-nosid}.ctx.json"
-printf '%s' "$INPUT" | bash "$NOTIFY_DIR/notify-context.sh" "$EVENT" > "$CTX" 2>/dev/null || : > "$CTX"
+printf '%s' "$INPUT" | bash "$YOINK_DIR/notify-context.sh" "$EVENT" > "$CTX" 2>/dev/null || : > "$CTX"
 WCTX="$(wslpath -w "$CTX" 2>/dev/null)"
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" \

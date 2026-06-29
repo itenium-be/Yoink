@@ -112,7 +112,7 @@
       <ol class="install">
         <li>
           <h3>Clone into your Claude config</h3>
-          <div class="code"><pre id="code-clone"><code>git clone https://github.com/itenium-be/Yoink ~/.claude/notify
+          <div class="code"><pre id="code-clone"><code>git clone https://github.com/itenium-be/Yoink ~/.claude/yoink
 sudo apt install jq   # WSL needs jq on PATH</code></pre><button class="copy" data-copy="code-clone">Copy</button></div>
         </li>
         <li>
@@ -120,13 +120,13 @@ sudo apt install jq   # WSL needs jq on PATH</code></pre><button class="copy" da
           <p>Point <code>~/.claude/settings.json</code> at the hook scripts:</p>
           <div class="code"><pre id="code-hooks"><code>"hooks": {
   "SessionStart": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-capture.sh" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/yoink/hooks/notify-capture.sh" } ] }
   ],
   "Stop": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh done" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/yoink/hooks/notify-fire.sh done" } ] }
   ],
   "Notification": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh needs-input" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/yoink/hooks/notify-fire.sh needs-input" } ] }
   ]
 }</code></pre><button class="copy" data-copy="code-hooks">Copy</button></div>
         </li>
