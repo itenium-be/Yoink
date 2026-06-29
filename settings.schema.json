@@ -199,7 +199,7 @@
         "shootingStar": { "type": "boolean", "description": "unicorn: draw occasional shooting-star streaks." },
         "embers": { "type": "boolean", "description": "dragon: draw rising glowing ember sparks (default true)." },
         "glow": { "type": "boolean", "description": "dragon: draw warm fire glow rising from the bottom edge." },
-        "bottom": { "enum": ["lava", "treasure", "coals", "shimmer", "none"], "description": "dragon: bottom layer — \"lava\" (molten pool), \"treasure\" (gold hoard), \"coals\" (glowing coal bed), \"shimmer\" (heat haze) or \"none\" (default \"lava\"). Mutually exclusive." },
+        "bottom": { "enum": ["lava", "treasure", "coals", "none"], "description": "dragon: bottom layer — \"lava\" (molten pool), \"treasure\" (gold hoard), \"coals\" (glowing coal bed) or \"none\" (default \"lava\"). Mutually exclusive." },
         "smoke": { "type": "boolean", "description": "dragon: draw dark smoke wisps rising above the bottom layer." }
       }
     }
