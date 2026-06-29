@@ -74,6 +74,9 @@ function Start-CardChoreography($box, $theme, $ev) {
       bottom       = [string](Coalesce (Get-Prop $theme.scene 'bottom') 'lava')
       smoke        = [bool](Get-Prop $theme.scene 'smoke')
       volcano      = [bool](Get-Prop $theme.scene 'volcano')
+      base         = [string](Coalesce (Get-Prop $theme.scene 'base') 'circuit')
+      leds         = [bool](Coalesce (Get-Prop $theme.scene 'leds') $true)
+      rings        = [bool](Coalesce (Get-Prop $theme.scene 'rings') $true)
     }
   }
   $sceneKinds = @{
@@ -84,6 +87,7 @@ function Start-CardChoreography($box, $theme, $ev) {
     unicorn = { param($b, $c) Start-Unicorn $b $c }
     spooky  = { param($b, $c) Start-Spooky $b $c }
     dragon  = { param($b, $c) Start-Dragon $b $c }
+    robot   = { param($b, $c) Start-Robot $b $c }
   }
   if ($sceneCfg) {
     $fn = $sceneKinds[$sceneCfg.kind]
