@@ -72,6 +72,16 @@ function New-NotificationBox {
 "@
   }
 
+  # Scenery Canvas is emitted ONLY when the theme opts in, so themes without a
+  # scene render byte-identical XAML (keeps the golden default-equivalence test green).
+  # Inserted as the card grid's first child: equal ZIndex -> document order paints
+  # it behind the hero watermark; the content StackPanel (ZIndex 1) stays on top.
+  if ($Theme.scene -and (Get-Prop $Theme.scene 'kind')) {
+    $sceneBlock = '<Canvas x:Name="scene" Panel.ZIndex="0" ClipToBounds="True"/>'
+  } else {
+    $sceneBlock = ''
+  }
+
   $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -87,7 +97,7 @@ function New-NotificationBox {
       </Border.Background>
       <Border.Effect><DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.55"/></Border.Effect>
       <Border x:Name="card" CornerRadius="21" Margin="3" Background="$($Theme.card)" ClipToBounds="True">
-        <Grid>
+        <Grid>$sceneBlock
           <!-- Big rainbow unicorn background, bleeding to the card edges (rounded clip
                on the card keeps it from spilling onto the rim).
                VerticalAlignment must stay Stretch: a Rectangle with no Height collapses otherwise. -->
@@ -245,6 +255,7 @@ function New-NotificationBox {
   return @{
     Win = $win; Card = $win.FindName('card'); Slot = $win.FindName('slot')
     Overlay = $win.FindName('overlay'); Mascot = $win.FindName('mascot')
+    Scene = $win.FindName('scene')
     Event = $Event
   }
 }
