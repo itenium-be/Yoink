@@ -66,6 +66,24 @@ if ($EmitXaml) {
   New-NotificationBox -Event $Event -Theme $theme -Ev $ev -BodyLines $bodyLines -Footer $footer -WorkArea $wa -EmitXaml; return
 }
 
+# --- Terminal already focused? You're looking right at it, so skip the card. The themed
+# sound still plays unless play-sound-when-terminal-is-active is off. (Both checks live here,
+# not in bash: the foreground test needs the live window, and "random" only resolves the
+# theme — hence the wav — once we're this far.) ---
+$terminalActive = ($Hwnd -ne 0) -and ([WinFocus]::GetForegroundWindow() -eq [IntPtr]$Hwnd)
+
+# --- Sound --- theme picks the wav; the event toggle gates it. Toggle off, no file, or
+# missing file => silent.
+if ([bool]$ev.sound -and (-not $terminalActive -or (Get-PlaySoundWhenTerminalActive $cfg))) {
+  $sndFile = if ($theme.sound) { [string](Get-Prop $theme.sound $Event) } else { '' }
+  if ($sndFile) {
+    $sndPath = Join-Path $PSScriptRoot "sounds\$sndFile"
+    if (Test-Path $sndPath) { try { (New-Object System.Media.SoundPlayer $sndPath).Play() } catch {} }
+  }
+}
+
+if ($terminalActive) { return }
+
 # --- One card per monitor: evict any predecessor still showing on this screen ---
 # Keyed by DeviceName (e.g. \\.\DISPLAY1). Guard on process name: a card that crashed
 # (e.g. the PostMessage quota crash) leaves a stale PID that may have been reused.
@@ -87,17 +105,6 @@ if ($Hwnd -ne 0) { try { [WinFocus]::Flash([IntPtr]$Hwnd) } catch {} }
 
 # Without a target window we can't auto-close on focus, so fall back to a timeout.
 if ($Hwnd -eq 0 -and $Seconds -le 0) { $Seconds = 15 }
-
-# --- Sound --- theme picks the wav; the event toggle gates it. Toggle off, no file, or
-# missing file => silent. (Resolution lives here, not in bash, because activeTheme "random"
-# only resolves once the card is built.)
-if ([bool]$ev.sound) {
-  $sndFile = if ($theme.sound) { [string](Get-Prop $theme.sound $Event) } else { '' }
-  if ($sndFile) {
-    $sndPath = Join-Path $PSScriptRoot "sounds\$sndFile"
-    if (Test-Path $sndPath) { try { (New-Object System.Media.SoundPlayer $sndPath).Play() } catch {} }
-  }
-}
 
 # --- Build the window ---
 $box = New-NotificationBox -Event $Event -Theme $theme -Ev $ev -BodyLines $bodyLines -Footer $footer -WorkArea $wa

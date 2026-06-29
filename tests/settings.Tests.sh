@@ -15,6 +15,7 @@ check "valid jsonc"           "jq -e . '$F' >/dev/null"
 check "jsonc strips comments"  "printf '{\n  // pick\n  \"a\": 1 /* x */\n}' | python3 '$ROOT/tests/strip-jsonc.py' | jq -e '.a==1' >/dev/null"
 check "jsonc keeps // in strings" "printf '{\"u\":\"http://x//y\"}' | python3 '$ROOT/tests/strip-jsonc.py' | jq -e '.u==\"http://x//y\"' >/dev/null"
 check "activeTheme present"   "jq -e '.activeTheme' '$F' >/dev/null 2>&1"
+check "play-sound-when-terminal-is-active is boolean" "[[ \"\$(jq -r '.[\"play-sound-when-terminal-is-active\"]|type' '$F')\" == 'boolean' ]]"
 check "activeTheme names a real theme" "jq -e '.themes[.activeTheme]' '$F' >/dev/null 2>&1"
 check "9 themes"              "[[ \"\$(jq '.themes|length' '$F')\" == '9' ]]"
 check "unicorn theme"         "jq -e '.themes.unicorn' '$F' >/dev/null"
@@ -39,6 +40,7 @@ check "matrix hero has emoji + fixed fill" "jq -e '.themes.matrix.hero | .emoji 
 # scene has additionalProperties:false, so every flag the theme uses must be
 # defined and "unicorn" must be an allowed kind.
 SCHEMA="$ROOT/settings.schema.json"
+check "schema defines play-sound-when-terminal-is-active as boolean" "[[ \"\$(jq -r '.properties[\"play-sound-when-terminal-is-active\"].type' '$SCHEMA')\" == 'boolean' ]]"
 check "schema event sound is boolean" "[[ \"\$(jq -r '.definitions.event.properties.sound.type' '$SCHEMA')\" == 'boolean' ]]"
 check "schema theme sound is object"  "[[ \"\$(jq -r '.definitions.theme.properties.sound.type' '$SCHEMA')\" == 'object' ]]"
 check "unicorn has unicorn scene"        "[[ \"\$(jq -r '.themes.unicorn.scene.kind // empty' '$F')\" == 'unicorn' ]]"

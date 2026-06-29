@@ -157,6 +157,11 @@ Assert-Eq (Resolve-Event $cfgEmptySnd 'done').sound '' "explicit empty sound hon
 $cfgNoSnd = [pscustomobject]@{ events = [pscustomobject]@{ 'done' = [pscustomobject]@{ label = 'Y' } } }
 Assert-Eq (Resolve-Event $cfgNoSnd 'done').sound 'asterisk' "missing sound falls back to default"
 
+# --- Get-PlaySoundWhenTerminalActive: top-level toggle, default true ---
+Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{})) 'True' "missing toggle -> default true"
+Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{ 'play-sound-when-terminal-is-active' = $false })) 'False' "explicit false honored"
+Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{ 'play-sound-when-terminal-is-active' = $true })) 'True' "explicit true honored"
+
 # --- mascot: move/end resolve, each field falling back to the event default ---
 Assert-Eq (Resolve-Event $cfg 'done').mascot.move 'walk' "resolve mascot move"
 Assert-Eq (Resolve-Event $cfg 'done').mascot.end 'confetti' "resolve mascot end (done)"

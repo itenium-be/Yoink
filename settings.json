@@ -1,5 +1,6 @@
 {
   "activeTheme": "unicorn",
+  "play-sound-when-terminal-is-active": true,
   "events": {
     "needs-input": {
       "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": true,

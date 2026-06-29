@@ -105,6 +105,15 @@ function Get-NotifyConfig([string]$Dir) {
   return Get-NotifyDefaults
 }
 
+# Top-level toggle. When the originating terminal is already focused the card is skipped
+# (you're looking right at it) but the themed sound still fires — unless this is false.
+# Missing key => true, so the chime keeps working for configs written before the toggle.
+function Get-PlaySoundWhenTerminalActive($cfg) {
+  $v = Get-Prop $cfg 'play-sound-when-terminal-is-active'
+  if ($null -eq $v) { return $true }
+  return [bool]$v
+}
+
 # Enumerate theme names from either shape.
 function Get-ThemeNames($cfg) {
   $themes = Get-Prop $cfg 'themes'

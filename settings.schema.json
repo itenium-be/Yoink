@@ -11,6 +11,10 @@
       "description": "Theme to apply, or \"random\" to pick a different one per notification. Must be \"random\" or a key under \"themes\".",
       "examples": ["random", "unicorn", "cosmic", "ocean", "sakura", "matrix", "dragon", "vaporwave", "robot", "spooky"]
     },
+    "play-sound-when-terminal-is-active": {
+      "type": "boolean",
+      "description": "When the originating terminal is already focused, the card is skipped (you're looking right at it). Keep playing the themed sound anyway. Set false to stay fully silent in that case. Default true."
+    },
     "events": {
       "type": "object",
       "additionalProperties": false,
