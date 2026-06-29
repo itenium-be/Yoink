@@ -25,15 +25,23 @@ function Add-SpaceStars($canvas, [double]$w, [double]$h, [int]$count) {
     [System.Windows.Controls.Canvas]::SetLeft($e, $x); [System.Windows.Controls.Canvas]::SetTop($e, $y)
     $base = 0.55 + (Get-Random -Minimum 0 -Maximum 45) / 100.0  # 0.55 .. 1.0
     $e.Opacity = $base
+    # Twinkle is driven by a ScaleTransform: a plain Opacity BeginAnimation does not
+    # repaint reliably for these scene children, but render-transform animations (as
+    # used by the waves/comets) do — so we scintillate by size, plus an opacity pulse.
+    $st = New-Object System.Windows.Media.ScaleTransform 1, 1
+    $st.CenterX = $sz / 2; $st.CenterY = $sz / 2
+    $e.RenderTransform = $st
     $canvas.Children.Add($e) | Out-Null
-    # Every star twinkles. Vary the dim floor and period per star; the spread of
-    # durations desyncs them within a couple seconds (no BeginTime needed — a negative
-    # BeginTime on a BeginAnimation clock does NOT reliably start mid-cycle here).
-    $lo = 0.12 + (Get-Random -Minimum 0 -Maximum 20) / 100.0    # dim to 0.12 .. 0.32
-    $dur = 0.8 + (Get-Random -Minimum 0 -Maximum 22) / 10.0     # 0.8 .. 3.0 s
-    $tw = New-Object System.Windows.Media.Animation.DoubleAnimation $base, $lo, ([System.Windows.Duration][TimeSpan]::FromSeconds($dur))
-    $tw.AutoReverse = $true; $tw.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
-    $e.BeginAnimation([System.Windows.UIElement]::OpacityProperty, $tw)
+    if ((Get-Random -Minimum 0 -Maximum 10) -lt 6) {                 # ~60% twinkle
+      $d2 = [System.Windows.Duration][TimeSpan]::FromSeconds(0.7 + (Get-Random -Minimum 0 -Maximum 18) / 10.0)  # 0.7 .. 2.5 s
+      $sa = New-Object System.Windows.Media.Animation.DoubleAnimation 0.45, 1.6, $d2
+      $sa.AutoReverse = $true; $sa.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+      $st.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleXProperty, $sa)
+      $st.BeginAnimation([System.Windows.Media.ScaleTransform]::ScaleYProperty, $sa)
+      $oa = New-Object System.Windows.Media.Animation.DoubleAnimation $base, 0.2, $d2
+      $oa.AutoReverse = $true; $oa.RepeatBehavior = [System.Windows.Media.Animation.RepeatBehavior]::Forever
+      $e.BeginAnimation([System.Windows.UIElement]::OpacityProperty, $oa)
+    }
   }
 }
 
