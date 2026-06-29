@@ -3,7 +3,7 @@ name: Deploy site to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['site/**', '.github/workflows/pages.yml']
+    paths: ['site/**', 'settings.schema.json', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Schema lives at repo root (PowerShell loads it via $PSScriptRoot); publish a
+      # copy so its $id URL (itenium-be.github.io/Yoink/settings.schema.json) resolves.
+      - run: cp settings.schema.json site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
