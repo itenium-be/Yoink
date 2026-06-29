@@ -84,4 +84,11 @@ $lines3 = @(Resolve-BodyLines @(@{ text='hello'; style='sub' }) @{})
 Assert-Eq $lines3.Count 1 "pure literal kept"
 Assert-Eq $lines3[0].text 'hello' "pure literal text"
 
+# --- Get-StopColors ---
+$cols = @(Get-StopColors @('#FF0000 0','#00FF00 0.5','#0000FF 1'))
+Assert-Eq $cols.Count 3 "stop colors count"
+Assert-Eq $cols[0] '#FF0000' "first stop color"
+Assert-Eq $cols[2] '#0000FF' "last stop color"
+Assert-Eq (@(Get-StopColors @('bad','#123456 0.4')).Count) 1 "unparseable stop skipped"
+
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }

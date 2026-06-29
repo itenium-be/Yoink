@@ -14,7 +14,7 @@ check "9 themes"              "[[ \"\$(jq '.themes|length' '$F')\" == '9' ]]"
 check "unicorn theme"         "jq -e '.themes.unicorn' '$F' >/dev/null"
 check "needs-input body array" "jq -e '.events[\"needs-input\"].body|type==\"array\"' '$F' >/dev/null"
 check "done body array"       "jq -e '.events.done.body|type==\"array\"' '$F' >/dev/null"
-check "every theme has hero/gradient/rim/card/palette" \
-  "[[ \"\$(jq '[.themes[]|select(.hero and .gradient and .rim and .card and .palette)]|length' '$F')\" == '9' ]]"
+check "every theme has hero/gradient/rim/card" \
+  "[[ \"\$(jq '[.themes[]|select(.hero and .gradient and .rim and .card)]|length' '$F')\" == '9' ]]"
 
 exit $fail

@@ -30,7 +30,6 @@ function Get-NotifyDefaults {
         gradient=@('#FF5F6D 0','#FFC371 0.28','#3CFFB0 0.5','#36D1DC 0.72','#A56BFF 1')
         rim=@('#7C3AED 0','#2563EB 0.17','#06B6D4 0.34','#22C55E 0.5','#EAB308 0.67','#F97316 0.84','#EC4899 1')
         card='#18181B'
-        palette=@('#FF5F6D','#FFC371','#FFD93D','#3CFFB0','#36D1DC','#A56BFF','#EC4899')
       }
     }
   }
@@ -85,7 +84,6 @@ function Resolve-Theme($cfg, [string]$name) {
     gradient = @(Coalesce (Get-Prop $t 'gradient') $def.gradient)
     rim      = @(Coalesce (Get-Prop $t 'rim')      $def.rim)
     card     = (Coalesce (Get-Prop $t 'card')     $def.card)
-    palette  = @(Coalesce (Get-Prop $t 'palette')  $def.palette)
   }
 }
 
@@ -101,6 +99,14 @@ function Resolve-Event($cfg, [string]$event) {
     mascot    = (Coalesce (Get-Prop $e 'mascot')    $def.mascot)
     sound     = (Coalesce (Get-Prop $e 'sound')     $def.sound)
     body      = @(Coalesce (Get-Prop $e 'body')      $def.body)
+  }
+}
+
+# ["#RRGGBB offset", ...] -> array of just the "#RRGGBB" colors. Unparseable stops skipped.
+function Get-StopColors([string[]]$stops) {
+  foreach ($s in $stops) {
+    $c = ((($s -replace '\s+', ' ').Trim()) -split ' ')[0]
+    if ($c -match '^#[0-9A-Fa-f]{6}$') { $c }
   }
 }
 
