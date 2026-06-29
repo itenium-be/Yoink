@@ -57,7 +57,7 @@
           "description": "Mascot choreography. The look-around and the jump onto the card edge always play; these two phases follow it.",
           "properties": {
             "move": {
-              "enum": ["walk", "hjump"],
+              "enum": ["walk", "jump"],
               "description": "How the mascot crosses the edge to its spot: walk, or a horizontal jump."
             },
             "end": {

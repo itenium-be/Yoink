@@ -124,8 +124,8 @@ Assert-Eq (Resolve-Event $cfgNoSnd 'done').sound 'asterisk' "missing sound falls
 # --- mascot: move/end resolve, each field falling back to the event default ---
 Assert-Eq (Resolve-Event $cfg 'done').mascot.move 'walk' "resolve mascot move"
 Assert-Eq (Resolve-Event $cfg 'done').mascot.end 'confetti' "resolve mascot end (done)"
-$cfgPartialMascot = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ mascot = [pscustomobject]@{ move = 'hjump' } } } }
-Assert-Eq (Resolve-Event $cfgPartialMascot 'needs-input').mascot.move 'hjump' "explicit move honored"
+$cfgPartialMascot = [pscustomobject]@{ events = [pscustomobject]@{ 'needs-input' = [pscustomobject]@{ mascot = [pscustomobject]@{ move = 'jump' } } } }
+Assert-Eq (Resolve-Event $cfgPartialMascot 'needs-input').mascot.move 'jump' "explicit move honored"
 Assert-Eq (Resolve-Event $cfgPartialMascot 'needs-input').mascot.end 'flag' "missing end falls back to default (needs-input)"
 
 if ($script:fail -gt 0) { exit 1 } else { Write-Host "ALL PASS" }

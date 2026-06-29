@@ -112,7 +112,7 @@ foreach ($e in 'gym', 'horizontal-jump') {
 # NB: plain scriptblock, not .GetNewClosure() - the closure form rebinds to a module
 # scope that can't see the script-scoped phase functions when the script is launched
 # via the call operator (.\show-notification.ps1) rather than -File.
-$box.Move = $ev.mascot.move   # walk | hjump
+$box.Move = $ev.mascot.move   # walk | jump (horizontal hop)
 $box.End  = $ev.mascot.end    # confetti | gym | flag
 $win.Add_Loaded({
   Start-JumpPrep $box {
@@ -122,7 +122,7 @@ $win.Add_Loaded({
         elseif ($box.End -eq 'flag') { Start-FlagWave $box }
         else                         { Start-Confetti $box }
       }
-      if ($box.Move -eq 'hjump') { Start-HJump $box $celebrate } else { Start-Walk $box $celebrate }
+      if ($box.Move -eq 'jump') { Start-HJump $box $celebrate } else { Start-Walk $box $celebrate }
     }
   }
 })
