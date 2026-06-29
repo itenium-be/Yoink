@@ -140,7 +140,24 @@
           "type": "string",
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "description": "Card background colour (#RRGGBB)."
-        }
+        },
+        "scene": { "$ref": "#/definitions/scene" }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "description": "Optional animated backdrop for the theme.",
+      "properties": {
+        "kind": { "enum": ["waves"], "description": "Scenery renderer. Currently only \"waves\"." },
+        "colors": {
+          "type": "array",
+          "description": "Colours the scene cycles. Defaults to the theme's gradient colours.",
+          "items": { "$ref": "#/definitions/hexColor" }
+        },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Scene layer opacity (default 0.22)." },
+        "speed": { "type": "number", "exclusiveMinimum": 0, "description": "Animation speed multiplier (default 1.0)." }
       }
     }
   }
