@@ -45,6 +45,12 @@ check "schema scene.kind allows spooky"  "jq -e '.definitions.scene.properties.k
 check "schema defines spooky scene flags" \
   "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"moon\"),has(\"fog\"),has(\"gravestones\"),has(\"webs\"),has(\"ghosts\"),has(\"bats\"),has(\"eyes\"),has(\"lightning\")]' '$SCHEMA')\" == '[true,true,true,true,true,true,true,true]' ]]"
 
+check "robot has robot scene"            "[[ \"\$(jq -r '.themes.robot.scene.kind // empty' '$F')\" == 'robot' ]]"
+check "robot scene base is circuit"      "[[ \"\$(jq -r '.themes.robot.scene.base // empty' '$F')\" == 'circuit' ]]"
+check "schema scene.kind allows robot"   "jq -e '.definitions.scene.properties.kind.enum|index(\"robot\")' '$SCHEMA' >/dev/null"
+check "schema defines robot scene flags" \
+  "[[ \"\$(jq -c '.definitions.scene.properties|[has(\"base\"),has(\"leds\"),has(\"rings\"),has(\"glow\")]' '$SCHEMA')\" == '[true,true,true,true]' ]]"
+
 check "vaporwave has vaporwave scene"       "[[ \"\$(jq -r '.themes.vaporwave.scene.kind // empty' '$F')\" == 'vaporwave' ]]"
 check "schema scene.kind allows vaporwave"  "jq -e '.definitions.scene.properties.kind.enum|index(\"vaporwave\")' '$SCHEMA' >/dev/null"
 check "schema defines vaporwave scene flags" \

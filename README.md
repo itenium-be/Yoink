@@ -4,24 +4,18 @@ Pops a custom notification on the monitor where *that* Claude session's terminal
 
 ## Wire up
 
-Install the hooks (this repo is assumed to live at `~/.claude/notify`):
-
-```bash
-cp ~/.claude/notify/hooks/*.sh ~/.claude/hooks/
-```
-
-Then add to `~/.claude/settings.json` (merge into an existing `hooks` block if you have one):
+Point `~/.claude/settings.json` at this repo's hook scripts. If this repo lives at `~/.claude/notify`:
 
 ```jsonc
 "hooks": {
   "SessionStart": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/hooks/notify-capture.sh" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-capture.sh" } ] }
   ],
   "Stop": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/hooks/notify-fire.sh done" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh done" } ] }
   ],
   "Notification": [
-    { "hooks": [ { "type": "command", "command": "bash ~/.claude/hooks/notify-fire.sh needs-input" } ] }
+    { "hooks": [ { "type": "command", "command": "bash ~/.claude/notify/hooks/notify-fire.sh needs-input" } ] }
   ]
 }
 ```
@@ -54,6 +48,20 @@ Flash and auto-close on *this* terminal:
 ```powershell
 .\show-notification.ps1 -Event done -Hwnd ([int64](Get-Process -Id $PID).MainWindowHandle)
 ```
+
+## Settings editor
+
+A live editor for `settings.json` — controls on top, the notification card looping below.
+Edits are in-memory until you press **Save**.
+
+```powershell
+.\settings-editor.ps1
+```
+
+Pick the event, theme, mascot moves, sounds and the active theme's scene toggles; the card
+re-renders as you change them. Body/footer text and gradient colours aren't editable yet —
+edit those in `settings.json` directly. The preview spawns a fresh animated card per edit, so
+after many tweaks it can get sluggish — restart the editor if so.
 
 ## Configuration
 
