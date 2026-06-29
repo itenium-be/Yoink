@@ -3,6 +3,8 @@
 Themed Windows (WSL) Claude notification hooks, whatever theme you fancy, be it 🦄, 🌸, 🐉
 or The Matrix, we've got you covered. Fully configurable.
 
+<video src="https://github.com/itenium-be/Yoink/raw/main/site/assets/yoink-unicorn.mp4" autoplay loop muted playsinline></video>
+
 
 ## Wire up
 
@@ -95,3 +97,8 @@ Flash and auto-close on *this* terminal:
 ```bash
 bash ~/.claude/yoink/tests/run.sh
 ```
+
+## Credits
+
+Thanks to [Wale-Durojaye Ayotomiwa](https://github.com/tomiwadoesux)
+for the awesome [Claude mascot animations](https://tympanus.net/codrops/2026/05/05/reverse-engineering-claude-ais-mascot-animations-with-svg-and-gsap/)

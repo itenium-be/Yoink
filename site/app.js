@@ -17,7 +17,7 @@ const THEMES = {
     gradient: ['#FF8FB1','#FFB7C5','#FBC2EB','#E0AAFF','#C8A2FF'],
     rim: ['#DB2777','#EC4899','#F472B6','#E879F9','#C084FC'],
     blurb: 'falling blossom petals, parallax branch' },
-  matrix:    { name: 'Matrix',    hero: '💊', card: '#050A05', scene: 'matrix',
+  matrix:    { name: 'Matrix',    hero: '🐇', card: '#050A05', scene: 'matrix',
     gradient: ['#00FF41','#22C55E','#16A34A','#00C853','#39FF14'],
     rim: ['#052E16','#14532D','#16A34A','#22C55E','#4ADE80'],
     blurb: 'katakana digital rain' },
@@ -63,8 +63,14 @@ function applyTheme(key) {
 
   document.querySelectorAll('.theme-pill').forEach(p =>
     p.setAttribute('aria-pressed', String(p.dataset.theme === key)));
-  document.getElementById('heroEmoji').textContent = t.hero;
-  document.getElementById('themeName').textContent = t.name;
+  // notif card replaced by a per-theme video demo; swap the source to match the pill.
+  // filenames mostly mirror the theme key — 'vaporwave' is the lone exception (yoink-vaporware.mp4).
+  const video = document.getElementById('heroVideo');
+  if (video) {
+    const file = key === 'vaporwave' ? 'vaporware' : key;
+    video.src = `assets/yoink-${file}.mp4`;
+    video.load();
+  }
 
   startScene(t);
 }
@@ -73,9 +79,12 @@ function applyEvent(key) {
   activeEvent = key;
   const e = EVENTS[key];
   document.documentElement.style.setProperty('--event-accent', e.accent);
-  document.getElementById('cardLabel').textContent = e.label;
-  document.getElementById('cardHeadline').textContent = e.headline;
-  document.getElementById('cardMascotLabel').textContent = e.mascot;
+  const labelEl = document.getElementById('cardLabel');
+  if (labelEl) labelEl.textContent = e.label;
+  const headlineEl = document.getElementById('cardHeadline');
+  if (headlineEl) headlineEl.textContent = e.headline;
+  const mascotEl = document.getElementById('cardMascotLabel');
+  if (mascotEl) mascotEl.textContent = e.mascot;
   document.querySelectorAll('.event-tab').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.event === key)));
 }

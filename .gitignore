@@ -4,3 +4,4 @@ sessions/
 .claude/settings.local.json
 screens/
 tools/__pycache__/
+.playwright-mcp/

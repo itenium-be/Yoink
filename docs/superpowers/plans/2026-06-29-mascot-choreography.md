@@ -321,7 +321,7 @@ Expected: prints `screen=... wa=...`, exit 0.
 
 - [ ] **Step 3: Verify bash hook tests still green**
 
-Run: `bash ~/.claude/notify/tests/run.sh`
+Run: `bash ~/.claude/yoink/tests/run.sh`
 Expected: `5 passed, 0 failed`.
 
 - [ ] **Step 4: Commit**

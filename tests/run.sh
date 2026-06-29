@@ -58,6 +58,13 @@ ok "fire needs-input event" 'grep -q -- "-Event needs-input" "$YOINK_DIR/last_sh
 # --- mascot outline step ---
 ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
 
+# The editor's live preview dispatches scenes through card-choreography, so it must
+# dot-source every scene lib the renderer does — otherwise Start-<Scene> is undefined
+# the moment that theme is previewed (and only for that theme, so it slips through).
+_scenes(){ grep -oE 'scene-[a-z]+\.ps1' "$1" | sort -u; }
+ok "editor loads every renderer scene" \
+  '[[ -z "$(comm -23 <(_scenes "$(dirname "$0")/../show-notification.ps1") <(_scenes "$(dirname "$0")/../settings-editor.ps1"))" ]]'
+
 # settings-model (pure PS) + editor seam need the REAL powershell, not the hook stub.
 PATH="$ORIG_PATH"
 ok "settings model" 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$(dirname "$0")/settings-model.Tests.ps1")" >/dev/null 2>&1'
