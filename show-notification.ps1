@@ -25,6 +25,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\scene-space.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-matrix.ps1')
 . (Join-Path $PSScriptRoot 'lib\scene-sakura.ps1')
+. (Join-Path $PSScriptRoot 'lib\scene-unicorn.ps1')
 . (Join-Path $PSScriptRoot 'notify-lib.ps1')
 
 # --- Resolve the target monitor ---
@@ -143,27 +144,33 @@ if ($theme.scene -and (Get-Prop $theme.scene 'kind')) {
     colors  = $sceneCols
     opacity = (Coalesce (Get-Prop $theme.scene 'opacity') 0.22)
     speed   = (Coalesce (Get-Prop $theme.scene 'speed')   1.0)
-    sky     = [bool](Get-Prop $theme.scene 'sky')
-    sun     = [bool](Get-Prop $theme.scene 'sun')
-    clouds  = [bool](Get-Prop $theme.scene 'clouds')
-    stars   = [bool](Get-Prop $theme.scene 'stars')
-    nebula  = [bool](Get-Prop $theme.scene 'nebula')
-    comets  = [bool](Get-Prop $theme.scene 'comets')
-    streaks = [bool](Get-Prop $theme.scene 'streaks')
-    density = (Coalesce (Get-Prop $theme.scene 'density') 0.85)
-    glyphs  = [string](Coalesce (Get-Prop $theme.scene 'glyphs') 'katakana')
-    petals   = [bool](Coalesce (Get-Prop $theme.scene 'petals') $true)
-    count    = [int](Coalesce (Get-Prop $theme.scene 'count') 22)
-    bloom    = [bool](Get-Prop $theme.scene 'bloom')
-    branch   = [bool](Get-Prop $theme.scene 'branch')
-    parallax = [bool](Get-Prop $theme.scene 'parallax')
+    sky          = [bool](Get-Prop $theme.scene 'sky')
+    sun          = [bool](Get-Prop $theme.scene 'sun')
+    clouds       = [bool](Get-Prop $theme.scene 'clouds')
+    stars        = [bool](Get-Prop $theme.scene 'stars')
+    nebula       = [bool](Get-Prop $theme.scene 'nebula')
+    comets       = [bool](Get-Prop $theme.scene 'comets')
+    streaks      = [bool](Get-Prop $theme.scene 'streaks')
+    density      = (Coalesce (Get-Prop $theme.scene 'density') 0.85)
+    glyphs       = [string](Coalesce (Get-Prop $theme.scene 'glyphs') 'katakana')
+    petals       = [bool](Coalesce (Get-Prop $theme.scene 'petals') $true)
+    count        = [int](Coalesce (Get-Prop $theme.scene 'count') 22)
+    bloom        = [bool](Get-Prop $theme.scene 'bloom')
+    branch       = [bool](Get-Prop $theme.scene 'branch')
+    parallax     = [bool](Get-Prop $theme.scene 'parallax')
+    aurora       = [bool](Get-Prop $theme.scene 'aurora')
+    rainbow      = [bool](Get-Prop $theme.scene 'rainbow')
+    glitter      = [bool](Get-Prop $theme.scene 'glitter')
+    sparkles     = [bool](Get-Prop $theme.scene 'sparkles')
+    shootingStar = [bool](Get-Prop $theme.scene 'shootingStar')
   }
 }
 $sceneKinds = @{
-  waves  = { param($b, $c) Start-Waves $b $c }
-  space  = { param($b, $c) Start-Space $b $c }
-  matrix = { param($b, $c) Start-Matrix $b $c }
-  sakura = { param($b, $c) Start-Sakura $b $c }
+  waves   = { param($b, $c) Start-Waves $b $c }
+  space   = { param($b, $c) Start-Space $b $c }
+  matrix  = { param($b, $c) Start-Matrix $b $c }
+  sakura  = { param($b, $c) Start-Sakura $b $c }
+  unicorn = { param($b, $c) Start-Unicorn $b $c }
 }
 $win.Add_Loaded({
   if ($sceneCfg) {

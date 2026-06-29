@@ -1,5 +1,5 @@
 {
-  "activeTheme": "sakura",
+  "activeTheme": "unicorn",
   "events": {
     "needs-input": {
       "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": "",
@@ -29,7 +29,8 @@
       "hero": "🦄",
       "gradient": ["#FF5F6D 0", "#FFC371 0.28", "#3CFFB0 0.5", "#36D1DC 0.72", "#A56BFF 1"],
       "rim": ["#7C3AED 0", "#2563EB 0.17", "#06B6D4 0.34", "#22C55E 0.5", "#EAB308 0.67", "#F97316 0.84", "#EC4899 1"],
-      "card": "#18181B"
+      "card": "#18181B",
+      "scene": { "kind": "unicorn", "sky": true, "rainbow": true, "clouds": true, "sparkles": true }
     },
     "cosmic": {
       "hero": "🚀",
