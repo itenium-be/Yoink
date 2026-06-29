@@ -6,6 +6,5 @@
     "name": "itenium",
     "email": "wouter.van.schandevijl@itenium.be"
   },
-  "homepage": "https://itenium-be.github.io/Yoink/",
-  "hooks": "./hooks/hooks.json"
+  "homepage": "https://itenium-be.github.io/Yoink/"
 }
