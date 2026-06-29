@@ -231,9 +231,21 @@ function initCopy() {
   });
 }
 
+function initInstallTabs() {
+  const section = document.getElementById('install');
+  const tabs = section.querySelectorAll('.method-tab');
+  const select = (method) => {
+    section.dataset.method = method;
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.method === method)));
+  };
+  tabs.forEach(t => t.addEventListener('click', () => select(t.dataset.method)));
+  select(section.dataset.method);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   buildPills();
   initCopy();
+  initInstallTabs();
   applyEvent('done');
   applyTheme('unicorn');
 });

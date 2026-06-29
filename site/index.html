@@ -56,15 +56,25 @@
     </section>
 
 
-    <section id="install" class="band">
+    <section id="install" class="band" data-method="marketplace">
       <h2>Install</h2>
+      <div class="method-tabs" role="tablist">
+        <button class="method-tab" role="tab" data-method="marketplace">Marketplace</button>
+        <button class="method-tab" role="tab" data-method="manual">Manual</button>
+      </div>
       <ol class="install">
-        <li>
+        <li class="method method-marketplace">
+          <h3>Add the marketplace &amp; install</h3>
+          <p>From Claude Code, run:</p>
+          <div class="code"><pre id="code-plugin"><code>/plugin marketplace add itenium-be/Yoink
+/plugin install yoink@yoink-marketplace</code></pre><button class="copy" data-copy="code-plugin">Copy</button></div>
+        </li>
+        <li class="method method-manual">
           <h3>WSL: Clone into your Claude config</h3>
           <div class="code"><pre id="code-clone"><code>git clone https://github.com/itenium-be/Yoink ~/.claude/yoink
 sudo apt install jq</code></pre><button class="copy" data-copy="code-clone">Copy</button></div>
         </li>
-        <li>
+        <li class="method method-manual">
           <h3>Wire up the hooks</h3>
           <p>Point <code>~/.claude/settings.json</code> at the hook scripts:</p>
           <div class="code"><pre id="code-hooks"><code>"hooks": {

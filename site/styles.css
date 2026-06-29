@@ -177,7 +177,17 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
 .media-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; margin-top: 16px; }
 .media-ph figcaption { margin-top: 10px; color: var(--muted); font-size: 14px; }
 
-.install { list-style: none; counter-reset: step; padding: 0; margin: 24px 0 0; display: grid; gap: 18px; }
+.method-tabs { display: inline-flex; gap: 4px; margin: 24px 0 0; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--hair); }
+.method-tab {
+  cursor: pointer; font: inherit; font-weight: 700; font-size: 14px; padding: 8px 18px; border-radius: 9px;
+  color: var(--muted); background: transparent; border: 0;
+}
+.method-tab[aria-selected="true"] { color: #0b0b12; background: linear-gradient(90deg, var(--grad)); }
+
+#install[data-method="marketplace"] .method-manual { display: none; }
+#install[data-method="manual"] .method-marketplace { display: none; }
+
+.install { list-style: none; counter-reset: step; padding: 0; margin: 18px 0 0; display: grid; gap: 18px; }
 .install li {
   position: relative; counter-increment: step; padding: 22px 22px 22px 64px;
   background: rgba(255,255,255,.04); border: 1px solid var(--hair); border-radius: 16px;
