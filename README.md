@@ -31,6 +31,8 @@ Running from a checkout, point `~/.claude/settings.json` at the hook scripts. If
 }
 ```
 
+> **Note:** Start a fresh session after installation. This will capture the window handle for correct screen display.
+
 ## Usage
 
 - **Left click** — activate the originating terminal.
