@@ -41,7 +41,7 @@ $cfg = [pscustomobject]@{
   activeTheme = 'unicorn'
   themes = [pscustomobject]@{
     unicorn = [pscustomobject]@{ hero = '🦄'; gradient = @('#FF5F6D 0', '#A56BFF 1'); rim = @('#7C3AED 0', '#EC4899 1'); card = '#18181B' }
-    ocean   = [pscustomobject]@{ hero = '🐳'; gradient = @('#0EA5E9 0', '#0891B2 1'); rim = @('#0C4A6E 0', '#14B8A6 1'); card = '#0A1620' }
+    ocean   = [pscustomobject]@{ hero = '🐳'; gradient = @('#0EA5E9 0', '#0891B2 1'); rim = @('#0C4A6E 0', '#14B8A6 1'); card = '#0A1620'; scene = [pscustomobject]@{ kind = 'waves' } }
   }
   events = [pscustomobject]@{
     'needs-input' = [pscustomobject]@{
@@ -60,6 +60,10 @@ $theme = Resolve-Theme $cfg 'ocean'
 Assert-Eq $theme.hero '🐳' "resolve named theme hero"
 $missing = Resolve-Theme $cfg 'nope'
 Assert-Eq $missing.hero '🦄' "unknown theme -> unicorn default"
+
+Assert-Eq (Resolve-Theme $cfg 'ocean').scene.kind 'waves' "resolve theme scene passthrough"
+Assert-Eq ([string](Resolve-Theme $cfg 'unicorn').scene) '' "theme without scene -> null/empty"
+Assert-Eq ([string](Resolve-Theme $cfg 'nope').scene) '' "unknown theme -> no scene"
 
 $ev = Resolve-Event $cfg 'needs-input'
 Assert-Eq $ev.label 'Needs you' "resolve event label"

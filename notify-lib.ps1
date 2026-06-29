@@ -84,6 +84,7 @@ function Resolve-Theme($cfg, [string]$name) {
     gradient = @(Coalesce (Get-Prop $t 'gradient') $def.gradient)
     rim      = @(Coalesce (Get-Prop $t 'rim')      $def.rim)
     card     = (Coalesce (Get-Prop $t 'card')     $def.card)
+    scene    = (Get-Prop $t 'scene')
   }
 }
 
