@@ -68,7 +68,6 @@ function Get-SchemaEnums([string]$SchemaPath) {
   @{
     'mascot.move'  = @(Get-ModelValue $schema @('definitions','event','properties','mascot','properties','move','enum'))
     'mascot.end'   = @(Get-ModelValue $schema @('definitions','event','properties','mascot','properties','end','enum'))
-    'sound'        = @(Get-ModelValue $schema @('definitions','event','properties','sound','enum'))
     'scene.glyphs' = @(Get-ModelValue $schema @('definitions','scene','properties','glyphs','enum'))
     'scene.bottom' = @(Get-ModelValue $schema @('definitions','scene','properties','bottom','enum'))
     'scene.base'   = @(Get-ModelValue $schema @('definitions','scene','properties','base','enum'))
@@ -139,11 +138,14 @@ function Get-EditorFields($model, $enums, [string]$Event, [string]$Theme) {
   Add-Field $fields ($ep + 'indicator')           'indicator'   'text'     @()
   Add-Field $fields ($ep + @('mascot','move'))    'mascot.move' 'dropdown' $enums['mascot.move']
   Add-Field $fields ($ep + @('mascot','end'))     'mascot.end'  'dropdown' $enums['mascot.end']
-  Add-Field $fields ($ep + 'sound')               'sound'       'dropdown' $enums['sound']
+  Add-Field $fields ($ep + 'sound')               'sound'       'checkbox' @()
 
   $tp = @('themes', $Theme)
   Add-Field $fields ($tp + 'hero') 'hero' 'hero' @()
   Add-Field $fields ($tp + 'card') 'card' 'text' @()
+  $soundOpts = @($enums['sound.files'])
+  Add-Field $fields ($tp + @('sound','done'))        'sound.done'        'sound' $soundOpts
+  Add-Field $fields ($tp + @('sound','needs-input')) 'sound.needs-input' 'sound' $soundOpts
 
   $scene = Get-ModelValue $model ($tp + 'scene')
   if ($scene -is [System.Collections.IDictionary]) {

@@ -50,13 +50,14 @@ Assert-Eq ($enums['mascot.end'] -join ',')  'confetti,gym,flag' "schema mascot.e
 Assert-Eq ($enums['scene.glyphs'] -join ',') 'katakana,latin,digits,binary,mixed' "schema glyphs enum"
 Assert-Eq ($enums['scene.bottom'] -join ',') 'lava,treasure,none' "schema bottom enum"
 Assert-Eq ($enums['scene.base'] -join ',') 'circuit,none' "schema base enum"
+$enums['sound.files'] = @('', 'unicorn-shine.wav', 'sakura-multi-hit.wav')
 
 # --- Get-EditorFields ---
 $model = [ordered]@{
   activeTheme = 'sakura'
   events = [ordered]@{ done = [ordered]@{ label='Done!'; mascot=[ordered]@{ move='walk'; end='confetti' } } }
   themes = [ordered]@{
-    sakura = [ordered]@{ hero='🌸'; card='#1A1620'; scene=[ordered]@{ kind='sakura'; petals=$true; count=22; glyphs='katakana' } }
+    sakura = [ordered]@{ hero='🌸'; card='#1A1620'; sound=[ordered]@{ done='sakura-multi-hit.wav'; 'needs-input'='' }; scene=[ordered]@{ kind='sakura'; petals=$true; count=22; glyphs='katakana' } }
     dragon = [ordered]@{ hero='🐉'; card='#1A0F0A'; scene=[ordered]@{ kind='dragon'; bottom='lava'; volcano=$false; embers=$true } }
   }
 }
@@ -69,6 +70,11 @@ Assert-Eq ($byLabel['mascot.move'].path -join '.') 'events.done.mascot.move' "ma
 Assert-Eq $byLabel['mascot.move'].kind 'dropdown' "mascot.move dropdown"
 Assert-Eq ($byLabel['hero'].path -join '.') 'themes.sakura.hero' "theme hero path"
 Assert-Eq $byLabel['hero'].kind 'hero' "theme hero is hero kind"
+Assert-Eq $byLabel['sound'].kind 'checkbox' "event sound is checkbox"
+Assert-Eq ($byLabel['sound.done'].path -join '.') 'themes.sakura.sound.done' "theme sound.done path"
+Assert-Eq $byLabel['sound.done'].kind 'sound' "theme sound.done is sound kind"
+Assert-Eq ($byLabel['sound.done'].options -join ',') ',unicorn-shine.wav,sakura-multi-hit.wav' "sound options injected"
+Assert-Eq ($byLabel['sound.needs-input'].path -join '.') 'themes.sakura.sound.needs-input' "theme sound.needs-input path"
 
 $dfields = Get-EditorFields $model $enums 'done' 'dragon'
 $dByLabel = @{}; foreach ($f in $dfields) { $dByLabel[$f.label] = $f }
