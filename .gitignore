@@ -3,3 +3,4 @@ sessions/
 .claude/worktrees/
 .claude/settings.local.json
 screens/
+tools/__pycache__/
