@@ -64,7 +64,7 @@ function ConvertTo-ModelValue([string]$Kind, $Raw) {
 
 # Read the enum option lists the editor needs from settings.schema.json.
 function Get-SchemaEnums([string]$SchemaPath) {
-  $schema = ConvertTo-HashtableDeep ((Remove-JsonComments (Get-Content -Raw -Encoding UTF8 $SchemaPath)) | ConvertFrom-Json)
+  $schema = Read-SettingsModel $SchemaPath
   @{
     'mascot.move'  = @(Get-ModelValue $schema @('definitions','event','properties','mascot','properties','move','enum'))
     'mascot.end'   = @(Get-ModelValue $schema @('definitions','event','properties','mascot','properties','end','enum'))
@@ -77,8 +77,8 @@ function Get-SchemaEnums([string]$SchemaPath) {
 # Each: @{ path=[string[]]; label=string; kind='text'|'dropdown'|'checkbox'|'number'; options=[string[]] }
 function Get-EditorFields($model, $enums, [string]$Event, [string]$Theme) {
   $fields = New-Object System.Collections.Generic.List[object]
-  function script:Add-Field($list, $path, $label, $kind, $opts) {
-    $list.Add(@{ path = @($path); label = $label; kind = $kind; options = @($opts) }) | Out-Null
+  function Add-Field($list, $path, $label, $kind, $opts) {
+    $list.Add(@{ path = @($path); label = $label; kind = $kind; options = @($opts) })
   }
 
   $themeNames = @((Get-ModelValue $model @('themes')).Keys)
