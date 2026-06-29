@@ -12,6 +12,16 @@
 
 ---
 
+## Addendum (2026-06-29): architecture correction after Task 6
+
+Tasks 1–6 (`settings.json`, `notify-lib.ps1`, `notify-context.sh`) are architecture-independent and stand as committed. Task 7 was written against a **monolithic** `show-notification.ps1`, but the renderer was since refactored into a thin orchestrator (`show-notification.ps1`) plus `lib/` modules — the XAML/card build lives in `lib/notification-box.ps1` (`New-NotificationBox`), and mascots are **PNG-flipbook choreography** (`lib/mascot-player.ps1`: look → jump → confetti/flag-wave), not emoji/fireworks. Decisions:
+
+- **`palette` is removed** from the theme model (settings.json, `Get-NotifyDefaults`, `Resolve-Theme`, tests). Fireworks particle colours derive from the theme `gradient` via a new pure helper `Get-StopColors`.
+- **`indicator` is kept** and re-wired as a small themed badge on the card, shown **alongside** the flipbook mascot: emoji (👋) → self-animating waving Rectangle filled by the theme gradient; `"fireworks"` → an `fx` Canvas burst coloured from `Get-StopColors $theme.gradient`.
+- Task 7 integrates into `lib/notification-box.ps1` + the orchestrator (dot-source `notify-lib.ps1`, resolve config, pass `$theme`/`$ev`/body lines into `New-NotificationBox`; `-Context`/`-EmitXaml` on the orchestrator). See revised Tasks 7a/7b below.
+
+---
+
 ## File Structure
 
 | Path | Responsibility |
