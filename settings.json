@@ -6,7 +6,7 @@
       "label": "Needs you", "accent": "#FF7A18", "indicator": "", "mascot": { "move": "walk", "end": "flag" }, "sound": true,
       "body": [
         { "text": "{{message}}", "style": "headline" },
-        { "text": "📁 /{{folder}}/",  "style": "sub" }
+        { "text": "/{{folder}}/",  "style": "sub" }
       ],
       "footer": [
         { "badge": "{{branch}}",    "color": "#F5F3FF", "background": "#7C3AED" },
@@ -17,7 +17,7 @@
       "label": "Done!", "accent": "#22C55E", "indicator": "", "mascot": { "move": "walk", "end": "confetti" }, "sound": true,
       "body": [
         { "text": "{{last_assistant}}", "style": "headline" },
-        { "text": "📁 /{{folder}}/",         "style": "sub" }
+        { "text": "/{{folder}}/",         "style": "sub" }
       ],
       "footer": [
         { "badge": "{{branch}}",    "color": "#F5F3FF", "background": "#7C3AED" },
