@@ -135,6 +135,7 @@ function Get-EditorFields($model, $enums, [string]$Event, [string]$Theme) {
   $ep = @('events', $Event)
   Add-Field $fields ($ep + 'label')               'label'       'text'     @()
   Add-Field $fields ($ep + 'accent')              'accent'      'text'     @()
+  Add-Field $fields ($ep + 'errorAccent')         'errorAccent' 'text'     @()
   Add-Field $fields ($ep + 'indicator')           'indicator'   'text'     @()
   Add-Field $fields ($ep + @('mascot','move'))    'mascot.move' 'dropdown' $enums['mascot.move']
   Add-Field $fields ($ep + @('mascot','end'))     'mascot.end'  'dropdown' $enums['mascot.end']
@@ -168,6 +169,8 @@ function Get-SampleContext {
     folder = 'my-project'; cwd = '/home/wouter/code/my-project'; repo = 'my-project'
     branch = 'main'; dirty = '●'; message = 'Waiting for your input'
     last_prompt = 'add a dark mode toggle'; last_assistant = 'Done — all tests pass'
+    last_assistant_clean = 'Done — all tests pass'
     model = 'claude-sonnet'; agents = '2'; pending_tool = 'Edit'; permission_mode = 'default'; event = 'done'
+    duration = '2m13s'; diff_stat = '3 files +42 -7'; files_changed = '3'; errors = '1'; tokens = '1.3k'
   }
 }

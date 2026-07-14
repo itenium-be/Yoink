@@ -67,11 +67,23 @@ Possible replacements for the notification body text.
 | `{{message}}`         | Claude Code's notification reason (needs-input only)               |
 | `{{last_prompt}}`     | Your most recent prompt                                            |
 | `{{last_assistant}}`  | Claude's last message                                              |
+| `{{last_assistant_clean}}` | Claude's last message, markdown stripped, first sentence only |
 | `{{model}}`           | Active model id                                                    |
 | `{{agents}}`          | Background agents still running (empty when none)                  |
 | `{{pending_tool}}`    | Name of the most recent tool call                                  |
 | `{{permission_mode}}` | `auto` / `default` / `plan` / `acceptEdits`                        |
 | `{{event}}`           | `done` or `needs-input`                                            |
+| `{{duration}}`        | How long the turn took (`2m13s`)                                   |
+| `{{diff_stat}}`       | Staged + unstaged changes (`3 files +42 −7`), empty when clean     |
+| `{{files_changed}}`   | File count behind `{{diff_stat}}`                                  |
+| `{{errors}}`          | Tool calls that failed this turn, empty when none                  |
+| `{{tokens}}`          | Output tokens Claude spent this turn (`1.3k`)                      |
+
+A line or badge whose tokens all resolve empty is dropped, so `{{errors}} ⚠` only shows
+up on a turn that had a failure.
+
+Events also take an `errorAccent`: a color the card switches to when `{{errors}}` is
+non-empty, so a turn that hit a tool failure doesn't look like a clean `done`.
 
 ## Requirements
 

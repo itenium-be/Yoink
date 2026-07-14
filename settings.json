@@ -15,14 +15,16 @@
       ]
     },
     "done": {
-      "label": "Done!", "accent": "#22C55E", "indicator": "", "mascot": { "move": "walk", "end": "confetti" }, "sound": true,
+      "label": "Done!", "accent": "#22C55E", "errorAccent": "#EF4444", "indicator": "", "mascot": { "move": "walk", "end": "confetti" }, "sound": true,
       "body": [
-        { "text": "{{last_assistant}}", "style": "headline" },
-        { "text": "/{{folder}}/",         "style": "sub" }
+        { "text": "{{last_assistant_clean}}", "style": "headline" },
+        { "text": "/{{folder}}/",         "style": "sub" },
+        { "text": "{{duration}} · {{diff_stat}} · {{tokens}}", "style": "muted" }
       ],
       "footer": [
         { "badge": "{{branch}}",    "color": "#F5F3FF", "background": "#7C3AED" },
-        { "badge": "{{agents}} 🤖", "color": "#ECFEFF", "background": "#0891B2" }
+        { "badge": "{{agents}} 🤖", "color": "#ECFEFF", "background": "#0891B2" },
+        { "badge": "{{errors}} ⚠",  "color": "#FEF2F2", "background": "#DC2626" }
       ]
     }
   },

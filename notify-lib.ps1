@@ -180,8 +180,10 @@ function Resolve-Event($cfg, [string]$event) {
   $snd = Get-Prop $e 'sound'
   $ftr = Get-Prop $e 'footer';    if ($null -eq $ftr) { $ftr = $def.footer }
   @{
-    label     = (Coalesce (Get-Prop $e 'label')     $def.label)
-    accent    = (Coalesce (Get-Prop $e 'accent')    $def.accent)
+    label       = (Coalesce (Get-Prop $e 'label')  $def.label)
+    accent      = (Coalesce (Get-Prop $e 'accent') $def.accent)
+    # No default: unset means a turn with tool failures keeps the normal accent.
+    errorAccent = [string](Get-Prop $e 'errorAccent')
     indicator = [string]$ind
     mascot    = @{
       move = (Coalesce (Get-Prop (Get-Prop $e 'mascot') 'move') $def.mascot.move)
@@ -191,6 +193,12 @@ function Resolve-Event($cfg, [string]$event) {
     body      = @(Coalesce (Get-Prop $e 'body')      $def.body)
     footer    = @($ftr)
   }
+}
+
+# The card accent, repainted when the turn hit a tool failure and the event opted in.
+function Resolve-Accent($ev, [hashtable]$ctx) {
+  if ($ctx['errors'] -and $ev.errorAccent) { return [string]$ev.errorAccent }
+  [string]$ev.accent
 }
 
 # ["#RRGGBB offset", ...] -> array of just the "#RRGGBB" colors. Unparseable stops skipped.

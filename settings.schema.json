@@ -51,6 +51,11 @@
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "description": "Colour of the header label text (#RRGGBB)."
         },
+        "errorAccent": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "description": "Accent used instead when the turn had a failed tool call ({{errors}} non-empty) (#RRGGBB). Omit to always keep \"accent\"."
+        },
         "indicator": {
           "type": "string",
           "description": "\"fireworks\" for the animated burst, or any emoji to show as the badge. Empty = built-in default."
@@ -93,8 +98,8 @@
       "properties": {
         "text": {
           "type": "string",
-          "description": "Line text. Supports {{token}} replacements: folder, cwd, repo, branch, dirty, message, last_prompt, last_assistant, model, agents, pending_tool, permission_mode, event.",
-          "markdownDescription": "Line text. Supports `{{token}}` replacements:\n\n`{{folder}}` `{{cwd}}` `{{repo}}` `{{branch}}` `{{dirty}}` `{{message}}` `{{last_prompt}}` `{{last_assistant}}` `{{model}}` `{{agents}}` `{{pending_tool}}` `{{permission_mode}}` `{{event}}`"
+          "description": "Line text. Supports {{token}} replacements: folder, cwd, repo, branch, dirty, message, last_prompt, last_assistant, last_assistant_clean, model, agents, pending_tool, permission_mode, event, duration, diff_stat, files_changed, errors, tokens.",
+          "markdownDescription": "Line text. Supports `{{token}}` replacements:\n\n`{{folder}}` `{{cwd}}` `{{repo}}` `{{branch}}` `{{dirty}}` `{{message}}` `{{last_prompt}}` `{{last_assistant}}` `{{last_assistant_clean}}` `{{model}}` `{{agents}}` `{{pending_tool}}` `{{permission_mode}}` `{{event}}` `{{duration}}` `{{diff_stat}}` `{{files_changed}}` `{{errors}}` `{{tokens}}`"
         },
         "style": {
           "enum": ["headline", "sub", "muted"],

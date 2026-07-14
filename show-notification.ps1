@@ -59,6 +59,7 @@ if ($Context -and (Test-Path $Context)) {
     foreach ($p in $cj.PSObject.Properties) { $ctx[$p.Name] = [string]$p.Value }
   } catch {}
 }
+$ev.accent = Resolve-Accent $ev $ctx
 $bodyLines = @(Resolve-BodyLines $ev.body $ctx)
 $footer    = @(Resolve-Footer $ev.footer $ctx)
 if ($EmitXaml) {

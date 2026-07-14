@@ -101,6 +101,20 @@ $ev = Resolve-Event $cfg 'needs-input'
 Assert-Eq $ev.label 'Needs you' "resolve event label"
 Assert-Eq $ev.indicator '👋' "resolve event indicator"
 Assert-Eq $ev.body[1].text '{{folder}} · {{branch}}' "resolve event body line"
+Assert-Eq $ev.errorAccent '' "no errorAccent -> empty (card keeps its accent)"
+
+# errorAccent: opt-in per event, never inherited from the built-in defaults.
+$cfgErr = [pscustomobject]@{ events = [pscustomobject]@{
+  done = [pscustomobject]@{ accent = '#22C55E'; errorAccent = '#EF4444' } } }
+$evErr = Resolve-Event $cfgErr 'done'
+Assert-Eq $evErr.errorAccent '#EF4444' "errorAccent resolved"
+Assert-Eq $evErr.accent      '#22C55E' "accent untouched by errorAccent"
+
+# --- Resolve-Accent ---
+Assert-Eq (Resolve-Accent $evErr @{ errors = '' })  '#22C55E' "clean turn keeps the accent"
+Assert-Eq (Resolve-Accent $evErr @{ errors = '2' }) '#EF4444' "erroring turn takes errorAccent"
+Assert-Eq (Resolve-Accent (Resolve-Event $cfg 'needs-input') @{ errors = '2' }) '#FF7A18' `
+  "no errorAccent configured -> accent stands"
 
 # Missing file -> defaults (today's look)
 $dcfg = Get-NotifyConfig 'C:\does\not\exist'
@@ -132,6 +146,21 @@ Assert-Eq $lines[2].style 'sub' "unknown style normalised to sub"
 # both tokens empty -> whole line dropped
 $lines2 = @(Resolve-BodyLines @(@{ text='{{folder}} · {{branch}}'; style='sub' }) @{ folder=''; branch='' })
 Assert-Eq $lines2.Count 0 "line with all-empty tokens dropped"
+
+# --- Turn-context tokens in a body/footer template ---
+$turnCtx = @{ last_assistant_clean='Fixed the flag mascot.'; duration='2m13s'
+              diff_stat='2 files +3 −1'; files_changed='2'; tokens='1.3k'; errors='2' }
+$turnBody = @(
+  @{ text='{{last_assistant_clean}}';                  style='headline' },
+  @{ text='{{duration}} · {{diff_stat}} · {{tokens}}'; style='muted' }
+)
+$turnLines = @(Resolve-BodyLines $turnBody $turnCtx)
+Assert-Eq $turnLines[0].text 'Fixed the flag mascot.'      "last_assistant_clean line"
+Assert-Eq $turnLines[1].text '2m13s · 2 files +3 −1 · 1.3k' "duration/diff_stat/tokens line"
+$turnFooter = @(Resolve-Footer @(@{ badge='{{errors}} ⚠' }) $turnCtx)
+Assert-Eq $turnFooter[0].text '2 ⚠' "errors badge"
+$cleanCtx = $turnCtx.Clone(); $cleanCtx.errors = ''
+Assert-Eq (@(Resolve-Footer @(@{ badge='{{errors}} ⚠' }) $cleanCtx)).Count 0 "errors badge dropped on a clean turn"
 
 # pure literal always kept
 $lines3 = @(Resolve-BodyLines @(@{ text='hello'; style='sub' }) @{})
