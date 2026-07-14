@@ -1,6 +1,6 @@
 {
   "name": "yoink",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Themed Windows/WSL notifications for Claude Code — unicorn, sakura, dragon, Matrix & more.",
   "author": {
     "name": "itenium",
