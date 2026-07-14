@@ -121,8 +121,14 @@ $win = $box.Win
 # launched via the call operator (.\show-notification.ps1) rather than -File.
 $win.Add_Loaded({ Start-CardChoreography $box $theme $ev })
 
-# --- Click to focus the originating terminal window ---
-$win.Add_MouseLeftButtonDown({
+# --- Clicks: left focuses the originating terminal, right just dismisses ---
+# Both act on button-up: closing on button-down leaves the window under the cursor to
+# receive the orphaned WM_*BUTTONUP, which is what pops a browser's context menu.
+$win.Add_MouseLeftButtonDown({ $_.Handled = $true })
+$win.Add_MouseRightButtonDown({ $_.Handled = $true })
+
+$win.Add_MouseLeftButtonUp({
+  $_.Handled = $true
   if ($Hwnd -ne 0) {
     if ([WinFocus]::IsIconic([IntPtr]$Hwnd)) { [WinFocus]::ShowWindow([IntPtr]$Hwnd, [WinFocus]::SW_RESTORE) }
     [WinFocus]::SetForegroundWindow([IntPtr]$Hwnd)
@@ -130,8 +136,7 @@ $win.Add_MouseLeftButtonDown({
   $win.Close()
 })
 
-# --- Right-click dismisses the card without touching the terminal's focus ---
-$win.Add_MouseRightButtonDown({ $win.Close() })
+$win.Add_MouseRightButtonUp({ $_.Handled = $true; $win.Close() })
 
 # --- Dismiss: close when the target terminal gains focus; optional timeout ---
 $script:elapsed = 0.0
