@@ -88,6 +88,7 @@ PATH="$ORIG_PATH"
 ok "settings model" 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$(dirname "$0")/settings-model.Tests.ps1")" >/dev/null 2>&1'
 ok "settings editor seam" 'bash "$(dirname "$0")/settings-editor.Tests.sh" >/dev/null 2>&1'
 ok "card body width-bounded" 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$(dirname "$0")/notification-box.Tests.ps1")" >/dev/null 2>&1'
+ok "card does not steal focus" 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w "$(dirname "$0")/focus.Tests.ps1")" >/dev/null 2>&1'
 
 echo "----"; echo "$pass passed, $fail failed"
 [[ $fail -eq 0 ]]

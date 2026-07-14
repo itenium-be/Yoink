@@ -158,11 +158,14 @@ function New-NotificationBox {
     $sceneBlock = ''
   }
 
+  # ShowActivated=False: WPF activates a window on show, which would yank the focus out of
+  # whatever you were typing in when the card pops up. Click-to-focus is unaffected - clicking
+  # the card activates it, and the click handler hands the foreground to the terminal.
   $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize" ShowActivated="False"
         Width="620" Height="461" Opacity="0">
   <Grid>
     <!-- Card sits below a tall transparent headroom strip: room for the mascot to
