@@ -19,7 +19,9 @@ MODEL="$(tr_last 'select(.type=="assistant").message.model')"
 AGENTS="$(tr_last 'select(.pendingBackgroundAgentCount!=null).pendingBackgroundAgentCount')"
 PTOOL="$(tr_last 'select(.type=="assistant").message.content[]?|select(.type=="tool_use").name')"
 LPROMPT="$(tr_last 'select(.type=="last-prompt").lastPrompt')"
-LASSIST="$(tr_last 'select(.type=="assistant").message.content[]?|select(.type=="text").text')"
+# Slurped, not tr_last: an assistant message spans multiple lines and tr_last keeps only
+# the last one of them.
+LASSIST="$([[ -f "$TR" ]] && jq -rs '[.[]|select(.type=="assistant")|.message.content[]?|select(.type=="text").text]|last // empty' "$TR" 2>/dev/null || true)"
 
 REPO=""; TOP="$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "$TOP" ]] && REPO="$(basename "$TOP")"
