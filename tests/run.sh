@@ -38,6 +38,24 @@ chmod +x "$TMP/bin/powershell.exe"
 echo '{"session_id":"xyz","cwd":"/tmp"}' | bash "$HOOKS/notify-capture.sh"
 ok "capture skips non-terminal" '[[ ! -f "$YOINK_DIR/sessions/xyz.json" ]]'
 
+# --- capture trusts other modern terminals (alacritty) ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in *capture*) echo "222 alacritty" ;; esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+echo '{"session_id":"ala","cwd":"/tmp"}' | bash "$HOOKS/notify-capture.sh"
+ok "capture trusts alacritty" '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/ala.json" 2>/dev/null)" == "222" ]]'
+
+# --- YOINK_TERMINALS overrides the whitelist ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in *capture*) echo "333 mycoolterm" ;; esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+YOINK_TERMINALS="mycoolterm" bash "$HOOKS/notify-capture.sh" <<<'{"session_id":"ct","cwd":"/tmp"}'
+ok "capture honors YOINK_TERMINALS" '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/ct.json" 2>/dev/null)" == "333" ]]'
+
 # --- fire passes stored hwnd + done status ---
 cat > "$TMP/bin/powershell.exe" <<'EOF'
 #!/usr/bin/env bash

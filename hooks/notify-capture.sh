@@ -17,8 +17,15 @@ OUT="$(powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" 2>/d
 HWND="${OUT%% *}"
 PROC="${OUT#* }"
 
-# Only trust the handle when the foreground window is the terminal host.
-if [[ "$PROC" == "WindowsTerminal" || "$PROC" == "wt" ]] && [[ "$HWND" =~ ^[0-9]+$ ]] && [[ "$HWND" != "0" ]]; then
+# Only trust the handle when the foreground window is a known terminal host.
+# Override the list via YOINK_TERMINALS (space-separated process names).
+# Host-based consoles (conhost, ConEmu) are excluded on purpose: they hand back a
+# child window, not the top-level handle we need to flash/focus.
+TERMINALS="${YOINK_TERMINALS:-WindowsTerminal wt alacritty wezterm-gui Hyper Tabby}"
+trusted=0
+for t in $TERMINALS; do [[ "$PROC" == "$t" ]] && { trusted=1; break; }; done
+
+if [[ "$trusted" == 1 ]] && [[ "$HWND" =~ ^[0-9]+$ ]] && [[ "$HWND" != "0" ]]; then
   jq -n --arg hwnd "$HWND" --arg cwd "$CWD" '{hwnd:($hwnd|tonumber), cwd:$cwd}' \
     > "$SESS_DIR/$SID.json"
 fi
