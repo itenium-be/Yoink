@@ -75,9 +75,10 @@ if ($EmitXaml) {
 # theme — hence the wav — once we're this far.) ---
 $terminalActive = ($Hwnd -ne 0) -and ([WinFocus]::GetForegroundWindow() -eq [IntPtr]$Hwnd)
 
-# --- Sound --- theme picks the wav; the event toggle gates it. Toggle off, no file, or
-# missing file => silent.
-if ([bool]$ev.sound -and (-not $terminalActive -or (Get-PlaySoundWhenTerminalActive $cfg))) {
+# --- Sound --- theme picks the wav; the event toggle gates it. Toggle off, no file,
+# missing file, or volume 0 => silent.
+$volume = Get-SoundVolume $cfg
+if ([bool]$ev.sound -and $volume -gt 0 -and (-not $terminalActive -or (Get-PlaySoundWhenTerminalActive $cfg))) {
   $sndFile = if ($theme.sound) { [string](Get-Prop $theme.sound $Event) } else { '' }
   if ($sndFile) {
     $sndPath = Join-Path $PSScriptRoot "sounds\$sndFile"
@@ -85,13 +86,35 @@ if ([bool]$ev.sound -and (-not $terminalActive -or (Get-PlaySoundWhenTerminalAct
       $userSnd = Join-Path $SettingsDir "sounds\$sndFile"
       if (Test-Path $userSnd) { $sndPath = $userSnd }   # user override survives plugin updates
     }
-    if (Test-Path $sndPath) { try { (New-Object System.Media.SoundPlayer $sndPath).Play() } catch {} }
+    if (Test-Path $sndPath) {
+      try {
+        # WPF MediaPlayer, not SoundPlayer: only it exposes .Volume. It plays async and is
+        # GC-collected mid-sound once out of scope, so it's rooted at script scope to outlive
+        # the dispatcher loop (ShowDialog below, or the pumped frame in the terminal-active path).
+        $script:soundPlayer = New-Object System.Windows.Media.MediaPlayer
+        $script:soundPlayer.Open([Uri]$sndPath)
+        $script:soundPlayer.Volume = $volume
+        $script:soundPlayer.Play()
+      } catch {}
+    }
   }
 }
 
-if ($SoundOnly) { return }
-
-if ($terminalActive) { return }
+# No card here — DND sound-only, or the terminal's already focused — so there's no
+# ShowDialog message loop to keep the async MediaPlayer alive. Pump a frame until the
+# sound ends, capped so a bad file can't wedge the process.
+if ($SoundOnly -or $terminalActive) {
+  if ($script:soundPlayer) {
+    $script:soundFrame = New-Object System.Windows.Threading.DispatcherFrame
+    $script:soundPlayer.Add_MediaEnded({ $script:soundFrame.Continue = $false })
+    $cap = New-Object System.Windows.Threading.DispatcherTimer
+    $cap.Interval = [TimeSpan]::FromSeconds(10)
+    $cap.Add_Tick({ $script:soundFrame.Continue = $false; $cap.Stop() })
+    $cap.Start()
+    [System.Windows.Threading.Dispatcher]::PushFrame($script:soundFrame)
+  }
+  return
+}
 
 # --- One card per monitor: evict any predecessor still showing on this screen ---
 # Keyed by DeviceName (e.g. \\.\DISPLAY1). Guard on process name: a card that crashed

@@ -63,6 +63,8 @@ Fully configurable by updating `settings.json`. Put your copy at
 `~/.claude/yoink/settings.json` — it overrides the defaults bundled with the plugin and
 survives plugin updates. Custom sounds go in `~/.claude/yoink/sounds/`.
 
+`"volume"` (0.0–1.0, default 1.0) scales themed sound playback; `0` mutes.
+
 Use the editor if you want to test-drive the different themes and options. It writes
 `settings.json` next to itself, so run it from a checkout and copy the result into
 `~/.claude/yoink/`.

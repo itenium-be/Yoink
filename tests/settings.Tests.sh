@@ -42,6 +42,8 @@ check "matrix hero has emoji + fixed fill" "jq -e '.themes.matrix.hero | .emoji 
 # defined and "unicorn" must be an allowed kind.
 SCHEMA="$ROOT/settings.schema.json"
 check "schema defines play-sound-when-terminal-is-active as boolean" "[[ \"\$(jq -r '.properties[\"play-sound-when-terminal-is-active\"].type' '$SCHEMA')\" == 'boolean' ]]"
+check "schema defines volume as number 0..1" "[[ \"\$(jq -rc '[.properties.volume.type,.properties.volume.minimum,.properties.volume.maximum]' '$SCHEMA')\" == '[\"number\",0,1]' ]]"
+check "settings volume is a number in 0..1" "[[ \"\$(jq -r 'if has(\"volume\") then (.volume|type==\"number\" and .>=0 and .<=1) else true end' '$F')\" == 'true' ]]"
 check "schema event sound is boolean" "[[ \"\$(jq -r '.definitions.event.properties.sound.type' '$SCHEMA')\" == 'boolean' ]]"
 check "schema theme sound is object"  "[[ \"\$(jq -r '.definitions.theme.properties.sound.type' '$SCHEMA')\" == 'object' ]]"
 check "unicorn has unicorn scene"        "[[ \"\$(jq -r '.themes.unicorn.scene.kind // empty' '$F')\" == 'unicorn' ]]"

@@ -197,6 +197,23 @@ Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{})) 'True' "missin
 Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{ 'play-sound-when-terminal-is-active' = $false })) 'False' "explicit false honored"
 Assert-Eq (Get-PlaySoundWhenTerminalActive ([pscustomobject]@{ 'play-sound-when-terminal-is-active' = $true })) 'True' "explicit true honored"
 
+# --- Get-SoundVolume: master playback volume 0.0..1.0, default 1.0, out-of-range clamped ---
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{})) 1 "missing volume -> default 1.0"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = 0.5 })) 0.5 "explicit 0.5 honored"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = 0 })) 0 "explicit 0 (silent) honored"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = 1 })) 1 "explicit 1 honored"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = 1.5 })) 1 "above range clamped to 1.0"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = -0.3 })) 0 "below range clamped to 0.0"
+Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = 'loud' })) 1 "non-numeric -> default 1.0"
+# A quoted "0.5" must parse the same regardless of host locale (nl-BE decimal is ',').
+$prevCul = [System.Threading.Thread]::CurrentThread.CurrentCulture
+try {
+  [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]'nl-BE'
+  Assert-Eq (Get-SoundVolume ([pscustomobject]@{ volume = '0.5' })) 0.5 "quoted 0.5 parsed locale-independently"
+} finally {
+  [System.Threading.Thread]::CurrentThread.CurrentCulture = $prevCul
+}
+
 # --- mascot: move/end resolve, each field falling back to the event default ---
 Assert-Eq (Resolve-Event $cfg 'done').mascot.move 'walk' "resolve mascot move"
 Assert-Eq (Resolve-Event $cfg 'done').mascot.end 'confetti' "resolve mascot end (done)"

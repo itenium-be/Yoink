@@ -119,6 +119,22 @@ function Get-PlaySoundWhenTerminalActive($cfg) {
   return [bool]$v
 }
 
+# Master playback volume for themed sounds, fed to MediaPlayer.Volume (0.0 silent .. 1.0
+# as mastered). Missing/non-numeric => 1.0; out-of-range is clamped, not rejected. Not
+# named Get-Volume: that's a built-in Storage cmdlet.
+function Get-SoundVolume($cfg) {
+  $v = Get-Prop $cfg 'volume'
+  if ($null -eq $v) { return 1.0 }
+  if ($v -is [ValueType]) { $d = [double]$v }
+  else {
+    # A quoted "0.5" is a string: parse invariantly ('.'-decimal) so a nl-BE-style host
+    # locale can't misread it and silently fall back to full volume.
+    $d = 0.0
+    if (-not [double]::TryParse([string]$v, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$d)) { return 1.0 }
+  }
+  [Math]::Max(0.0, [Math]::Min(1.0, $d))
+}
+
 # Channels that still fire while DND is active. "card" is never among them: a card *is*
 # the notification. Missing key => bell, so you can still see which tab wanted you.
 function Get-OffBehavior($cfg) {
