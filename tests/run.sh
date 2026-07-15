@@ -194,6 +194,31 @@ rm -f "$DND"
 fire
 ok "no dnd file notifies" 'card_shown'
 
+# --- /yoink attach ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *settings-probe*) printf 'status=ok\noff-behavior=bell\n' ;;
+  *capture*) echo "777 WindowsTerminal" ;;
+esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+rm -f "$YOINK_DIR/sessions/sid-1.json"
+bash "$YOINK" attach >/dev/null
+ok "attach binds the foreground window to this session" \
+  '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/sid-1.json" 2>/dev/null)" == "777" ]]'
+
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in *capture*) echo "888 explorer" ;; esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+rm -f "$YOINK_DIR/sessions/sid-1.json"
+ok "attach refuses an untrusted host" '! bash "$YOINK" attach >/dev/null 2>&1'
+bash "$YOINK" attach --force >/dev/null
+ok "attach --force takes it anyway" \
+  '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/sid-1.json" 2>/dev/null)" == "888" ]]'
+
 # --- mascot outline step ---
 ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
 

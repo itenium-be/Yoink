@@ -120,8 +120,23 @@ cmd_on(){
   printf 'yoink on (%s)\n' "${scope:-all scopes here}"
 }
 
+# The SessionStart hook only captures the window if the terminal happened to be focused
+# then, and only if its host is on the allowlist. When you type /yoink attach the terminal
+# *is* the foreground window by construction — so this is the more reliable capture path,
+# not merely a repair.
+cmd_attach(){
+  [[ -z "$SID" ]] && die "no CLAUDE_CODE_SESSION_ID — cannot bind a window to this session"
+  local out
+  if out="$(bash "$PLUGIN_ROOT/bin/capture-hwnd.sh" "$SID" "$PWD" "${1:-}" 2>&1)"; then
+    printf 'yoink attached to window %s\n' "$out"
+  else
+    die "$out — focus your terminal and retry, or /yoink attach --force to take it anyway"
+  fi
+}
+
 case "${1:-}" in
   off)    shift; cmd_off "$@" ;;
   on)     shift; cmd_on "$@" ;;
-  *)      die "usage: /yoink off|on [all|session|project] [30m|2h|1d]" ;;
+  attach) shift; cmd_attach "$@" ;;
+  *)      die "usage: /yoink off|on [all|session|project] [30m|2h|1d] | attach [--force]" ;;
 esac
