@@ -29,8 +29,7 @@ MISSING="$(probe "$FIX/probe-missing")"
 ok "missing settings are ok"        '[[ "$MISSING" == *"status=ok"* ]]'
 ok "missing settings default bell"  '[[ "$MISSING" == *"off-behavior=bell"* ]]'
 
-# User dir absent, bundled fallback present -> the bundled tier resolves the default,
-# proving the fix (previously this fell straight to hardcoded bell).
+# User dir absent, bundled fallback present -> the bundled tier supplies the default.
 FALLBACK="$(probe "$FIX/probe-missing" "$FIX/probe-bundled")"
 ok "no user settings falls back to bundled"     '[[ "$FALLBACK" == *"status=ok"* ]]'
 ok "bundled fallback off-behavior"              '[[ "$FALLBACK" == *"off-behavior=bell,sound"* ]]'
@@ -43,6 +42,11 @@ ok "user settings take precedence over bundled" '[[ "$USERWINS" == *"off-behavio
 # exists — the bundled tier only supplies a default, it never rescues a broken user file.
 BADWITHFALLBACK="$(probe "$FIX/probe-bad" "$FIX/probe-bundled")"
 ok "broken user settings still error with fallback present" '[[ "$BADWITHFALLBACK" == *"status=error"* ]]'
+
+# A malformed BUNDLED file is swallowed (packaging bug, not the user's) -> status=ok with
+# the hardcoded bell default, never the status=error reserved for a broken USER file.
+BUNDLEDBROKEN="$(probe "$FIX/probe-missing" "$FIX/probe-bad")"
+ok "broken bundled settings falls back to bell" '[[ "$BUNDLEDBROKEN" == *"status=ok"* && "$BUNDLEDBROKEN" == *"off-behavior=bell"* ]]'
 
 echo "----"; echo "$pass passed, $fail failed"
 [[ $fail -eq 0 ]]
