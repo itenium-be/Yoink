@@ -119,6 +119,14 @@ function Get-PlaySoundWhenTerminalActive($cfg) {
   return [bool]$v
 }
 
+# Channels that still fire while DND is active. "card" is never among them: a card *is*
+# the notification. Missing key => bell, so you can still see which tab wanted you.
+function Get-OffBehavior($cfg) {
+  $v = Get-Prop $cfg 'off-behavior'
+  if ($null -eq $v) { return @('bell') }
+  @(@($v) | Where-Object { $_ -eq 'bell' -or $_ -eq 'sound' })
+}
+
 # Enumerate theme names from either shape.
 function Get-ThemeNames($cfg) {
   $themes = Get-Prop $cfg 'themes'

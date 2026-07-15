@@ -1,0 +1,4 @@
+{
+  // the off-behavior default, with a comment that jq could never survive
+  "off-behavior": ["bell", "sound"]
+}

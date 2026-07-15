@@ -15,6 +15,12 @@
       "type": "boolean",
       "description": "When the originating terminal is already focused, the card is skipped (you're looking right at it). Keep playing the themed sound anyway. Set false to stay fully silent in that case. Default true."
     },
+    "off-behavior": {
+      "type": "array",
+      "description": "Channels that still fire while /yoink off is active. The card is always suppressed — a card is the notification. \"bell\" is the ASCII BEL on the session's own tab (your terminal decides whether that flashes or dings). Default [\"bell\"].",
+      "items": { "type": "string", "enum": ["bell", "sound"] },
+      "uniqueItems": true
+    },
     "events": {
       "type": "object",
       "additionalProperties": false,
