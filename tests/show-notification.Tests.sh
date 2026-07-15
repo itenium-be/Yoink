@@ -20,18 +20,21 @@ rm -f "$ROOT/screens"/*.pid 2>/dev/null
 powershell.exe -NoProfile -ExecutionPolicy Bypass \
   -File "$(wslpath -w "$ROOT/show-notification.ps1")" -Event done -Hwnd 0 -SoundOnly >/dev/null 2>&1 &
 SO_PID=$!
-SO_CARD=0
+SO_CARD=0; SO_EXITED=0
 for _ in $(seq 1 60); do   # ~6s: comfortably past the sound path's ~1s exit and green's ~2.8s worst case
   if ls "$ROOT/screens"/*.pid >/dev/null 2>&1; then SO_CARD=1; break; fi
-  kill -0 "$SO_PID" 2>/dev/null || break   # sound path exited without a marker
+  kill -0 "$SO_PID" 2>/dev/null || { SO_EXITED=1; break; }   # sound path returned with no marker
   sleep 0.1
 done
 kill "$SO_PID" 2>/dev/null; wait "$SO_PID" 2>/dev/null
 rm -f "$ROOT/screens"/*.pid 2>/dev/null
-if [[ "$SO_CARD" == 0 ]]; then
+# A process still alive after the whole window (no marker, no exit) is inconclusive, not a pass.
+if [[ "$SO_CARD" == 1 ]]; then
+  echo "FAIL: -SoundOnly built a card (screens/*.pid marker appeared)"; exit 1
+elif [[ "$SO_EXITED" == 1 ]]; then
   echo "ok: -SoundOnly draws no card"
 else
-  echo "FAIL: -SoundOnly built a card (screens/*.pid marker appeared)"; exit 1
+  echo "FAIL: -SoundOnly did not exit within the poll window (inconclusive)"; exit 1
 fi
 
 GOT="$(powershell.exe -NoProfile -ExecutionPolicy Bypass \
