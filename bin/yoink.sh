@@ -29,7 +29,8 @@ duration_secs(){
 probe(){
   local ps; ps="$(wslpath -w "$PLUGIN_ROOT/settings-probe.ps1" 2>/dev/null)"
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ps" \
-    -SettingsDir "$(wslpath -w "$YOINK_DIR" 2>/dev/null)" 2>/dev/null | tr -d '\r'
+    -SettingsDir "$(wslpath -w "$YOINK_DIR" 2>/dev/null)" \
+    -FallbackDir "$(wslpath -w "$PLUGIN_ROOT" 2>/dev/null)" 2>/dev/null | tr -d '\r'
 }
 default_allow(){
   local v; v="$(probe | sed -n 's/^off-behavior=//p')"

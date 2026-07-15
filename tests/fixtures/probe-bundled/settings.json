@@ -1,0 +1,4 @@
+{
+  // stands in for the bundled plugin default, distinct from any user fixture
+  "off-behavior": ["bell", "sound"]
+}
