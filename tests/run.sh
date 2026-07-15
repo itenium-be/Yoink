@@ -116,6 +116,14 @@ ok "on session keeps all"            '[[ "$(jq -r ".all.until" "$DND")" == "0" ]
 ok "off rejects a bad duration"      '! bash "$YOINK" off 5x >/dev/null 2>&1'
 ok "off rejects a bad scope"         '! bash "$YOINK" off everywhere >/dev/null 2>&1'
 
+# A quote in the cwd must not break the jq program and wipe existing state.
+rm -f "$DND"
+bash "$YOINK" off 1d >/dev/null                 # a real 'all' mute we must not lose
+mkdir -p "$TMP/ev il\"q"                          # dir name with a double-quote
+(cd "$TMP/ev il\"q" && bash "$YOINK" off project >/dev/null)
+ok "quote in cwd preserves the all mute" '[[ "$(jq -r ".all.until" "$DND")" -gt "$(date +%s)" ]]'
+ok "quote in cwd records the project"    '[[ -n "$(jq -r ".projects | keys[0] // empty" "$DND")" ]]'
+
 # --- fire passes stored hwnd + done status ---
 cat > "$TMP/bin/powershell.exe" <<'EOF'
 #!/usr/bin/env bash

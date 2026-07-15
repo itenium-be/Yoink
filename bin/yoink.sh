@@ -74,14 +74,21 @@ cmd_off(){
   [[ -n "$dur" ]] && until=$(( $(date +%s) + $(duration_secs "$dur") ))
   local allow_j; allow_j="$(allow_json "${allow:-$(default_allow)}")"
 
-  local key entry now; now="$(date +%s)"
+  local assign entry now; now="$(date +%s)"
   entry="$(jq -nc --argjson until "$until" --argjson allow "$allow_j" '{until:$until, allow:$allow}')"
+  # Fixed fragment per scope — the session id / cwd flow in as jq --arg values, never
+  # spliced into the program, so a `"` in either can't break the string literal.
   case "$scope" in
-    all)     key='.all' ;;
-    session) key=".sessions[\"$SID\"]" ;;
-    project) key=".projects[\"$PWD\"]" ;;
+    all)     assign='.all = $e' ;;
+    session) assign='.sessions[$sid] = $e' ;;
+    project) assign='.projects[$proj] = $e' ;;
   esac
-  write_dnd "$(read_dnd | jq --argjson now "$now" --argjson e "$entry" "$prune_filter | $key = \$e")"
+  local new
+  new="$(read_dnd | jq --argjson now "$now" --arg sid "$SID" --arg proj "$PWD" \
+    --argjson e "$entry" "$prune_filter | $assign")" \
+    || die "failed to update dnd state (jq error); left dnd.json untouched"
+  [[ -n "$new" ]] || die "refusing to write empty dnd state"
+  write_dnd "$new"
 
   local when="until further notice"
   [[ "$until" != 0 ]] && when="until $(date -d "@$until" '+%H:%M')"
@@ -93,17 +100,23 @@ cmd_on(){
   local scope="${1:-}"
   [[ -n "$scope" && "$scope" != "all" && "$scope" != "session" && "$scope" != "project" ]] \
     && die "unknown scope: $scope (all|session|project)"
+  [[ "$scope" == "session" && -z "$SID" ]] && die "no CLAUDE_CODE_SESSION_ID — cannot scope to this session"
   local now; now="$(date +%s)"
   local f
   case "$scope" in
     all)     f='del(.all)' ;;
-    session) f="del(.sessions[\"$SID\"])" ;;
-    project) f="del(.projects[\"$PWD\"])" ;;
+    session) f='del(.sessions[$sid])' ;;
+    project) f='del(.projects[$proj])' ;;
     # Bare `on` clears every scope that could be silencing you here: otherwise
     # `off session` then `on` leaves you muted and convinced yoink is broken.
-    *)       f="del(.all) | del(.sessions[\"$SID\"]) | del(.projects[\"$PWD\"])" ;;
+    *)       f='del(.all) | del(.sessions[$sid]) | del(.projects[$proj])' ;;
   esac
-  write_dnd "$(read_dnd | jq --argjson now "$now" "$prune_filter | $f")"
+  local new
+  new="$(read_dnd | jq --argjson now "$now" --arg sid "$SID" --arg proj "$PWD" \
+    "$prune_filter | $f")" \
+    || die "failed to update dnd state (jq error); left dnd.json untouched"
+  [[ -n "$new" ]] || die "refusing to write empty dnd state"
+  write_dnd "$new"
   printf 'yoink on (%s)\n' "${scope:-all scopes here}"
 }
 
