@@ -42,7 +42,7 @@ Running from a checkout, point `~/.claude/settings.json` at the hook scripts. If
 ## /yoink
 
 | Command                                     | Effect                                                                                               |
-|----------------------------------------------|--------------------------------------------------------------------------------------------------------|
+|---------------------------------------------|------------------------------------------------------------------------------------------------------|
 | `/yoink off [scope] [duration] [--allow …]` | Mute. Scope `all` (default), `session`, or `project`. Duration `30m`/`2h`/`1d`, omit for indefinite. |
 | `/yoink on [scope]`                         | Unmute. Bare `on` clears every scope that could be silencing you here.                               |
 | `/yoink attach [--force]`                   | Bind the foreground window to this session — fixes a missed HWND capture.                            |
