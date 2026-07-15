@@ -39,6 +39,24 @@ Running from a checkout, point `~/.claude/settings.json` at the hook scripts. If
 - **Right click** — close the notification without activating the terminal.
 
 
+## /yoink
+
+| Command                                     | Effect                                                                                               |
+|----------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| `/yoink off [scope] [duration] [--allow …]` | Mute. Scope `all` (default), `session`, or `project`. Duration `30m`/`2h`/`1d`, omit for indefinite. |
+| `/yoink on [scope]`                         | Unmute. Bare `on` clears every scope that could be silencing you here.                               |
+| `/yoink attach [--force]`                   | Bind the foreground window to this session — fixes a missed HWND capture.                            |
+| `/yoink doctor`                             | Self-check: jq, powershell.exe, window binding, settings, sounds, active mutes.                      |
+
+While muted the card never shows. `off-behavior` in `settings.json` picks what still does:
+
+```jsonc
+"off-behavior": ["bell"]
+```
+
+`bell` is the ASCII BEL on the session's own tab — your terminal decides whether that flashes or dings.
+`sound` plays the themed wav with no card. `[]` is fully dark.
+
 ## Settings
 
 Fully configurable by updating `settings.json`. Put your copy at
