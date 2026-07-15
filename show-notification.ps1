@@ -5,6 +5,7 @@ param(
   [int]$Seconds = 0,   # 0 = stay until clicked or the target terminal is focused
   [string]$Context = "",
   [string]$SettingsDir = "",   # user dir; its settings.json + sounds win over bundled defaults
+  [switch]$SoundOnly,   # DND: play the themed wav, draw no card
   [switch]$DryRun,
   [switch]$EmitXaml
 )
@@ -87,6 +88,8 @@ if ([bool]$ev.sound -and (-not $terminalActive -or (Get-PlaySoundWhenTerminalAct
     if (Test-Path $sndPath) { try { (New-Object System.Media.SoundPlayer $sndPath).Play() } catch {} }
   }
 }
+
+if ($SoundOnly) { return }
 
 if ($terminalActive) { return }
 
