@@ -215,6 +215,8 @@ EOF
 chmod +x "$TMP/bin/powershell.exe"
 rm -f "$YOINK_DIR/sessions/sid-1.json"
 ok "attach refuses an untrusted host" '! bash "$YOINK" attach >/dev/null 2>&1'
+ok "attach refuses an untrusted host leaves no session file" \
+  '[[ ! -f "$YOINK_DIR/sessions/sid-1.json" ]]'
 bash "$YOINK" attach --force >/dev/null
 ok "attach --force takes it anyway" \
   '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/sid-1.json" 2>/dev/null)" == "888" ]]'
