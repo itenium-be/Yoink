@@ -56,6 +56,18 @@ chmod +x "$TMP/bin/powershell.exe"
 YOINK_TERMINALS="mycoolterm" bash "$HOOKS/notify-capture.sh" <<<'{"session_id":"ct","cwd":"/tmp"}'
 ok "capture honors YOINK_TERMINALS" '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/ct.json" 2>/dev/null)" == "333" ]]'
 
+# --- capture-hwnd --force accepts an untrusted host (VS Code / conhost escape hatch) ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in *capture*) echo "444 conhost" ;; esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+bash "$(dirname "$0")/../bin/capture-hwnd.sh" "forced" "/tmp/f"
+ok "capture-hwnd skips untrusted host without --force" '[[ ! -f "$YOINK_DIR/sessions/forced.json" ]]'
+bash "$(dirname "$0")/../bin/capture-hwnd.sh" "forced" "/tmp/f" --force
+ok "capture-hwnd --force stores untrusted hwnd" '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/forced.json" 2>/dev/null)" == "444" ]]'
+ok "capture-hwnd --force stores cwd" '[[ "$(jq -r .cwd "$YOINK_DIR/sessions/forced.json" 2>/dev/null)" == "/tmp/f" ]]'
+
 # --- fire passes stored hwnd + done status ---
 cat > "$TMP/bin/powershell.exe" <<'EOF'
 #!/usr/bin/env bash
