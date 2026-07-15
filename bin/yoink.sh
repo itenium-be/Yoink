@@ -134,9 +134,45 @@ cmd_attach(){
   fi
 }
 
+# jq/powershell/settings checks catch a broken install; the hwnd check catches the
+# far more common case of a healthy install nobody has ever /yoink attach-ed.
+cmd_doctor(){
+  local rc=0
+  check(){ if eval "$2"; then printf '  ok    %s\n' "$1"; else printf '  FAIL  %s — %s\n' "$1" "$3"; rc=1; fi; }
+
+  printf 'yoink doctor\n'
+  check "jq on PATH"               'command -v jq >/dev/null'               "install jq"
+  check "powershell.exe reachable" 'command -v powershell.exe >/dev/null'   "not on PATH from WSL"
+
+  local rec="$YOINK_DIR/sessions/${SID:-none}.json"
+  check "window bound to this session" \
+    '[[ -n "$SID" && -f "$rec" && "$(jq -r ".hwnd // 0" "$rec" 2>/dev/null)" != "0" ]]' \
+    "no HWND record — run /yoink attach"
+
+  local p; p="$(probe)"
+  check "settings.json parses" '[[ "$p" == *"status=ok"* ]]' \
+    "$(sed -n 's/^error=//p' <<<"$p")"
+
+  check "sounds dir resolves" \
+    '[[ -d "$YOINK_DIR/sounds" || -d "$PLUGIN_ROOT/sounds" ]]' "no sounds dir"
+
+  # A silently-muted yoink is the most likely reason anyone runs doctor at all.
+  local muted
+  muted="$(read_dnd | jq -r --argjson now "$(date +%s)" '
+    def alive: .until == 0 or .until > $now;
+    [ (.all // empty), ((.sessions // {}) | .[]), ((.projects // {}) | .[]) ]
+    | map(select(alive)) | length' 2>/dev/null)"
+  if [[ "${muted:-0}" -gt 0 ]]; then
+    printf '  note  MUTED — %s active /yoink off scope(s); /yoink on to clear\n' "$muted"
+  fi
+
+  return $rc
+}
+
 case "${1:-}" in
   off)    shift; cmd_off "$@" ;;
   on)     shift; cmd_on "$@" ;;
   attach) shift; cmd_attach "$@" ;;
-  *)      die "usage: /yoink off|on [all|session|project] [30m|2h|1d] | attach [--force]" ;;
+  doctor) shift; cmd_doctor ;;
+  *)      die "usage: /yoink off|on [all|session|project] [30m|2h|1d] | attach [--force] | doctor" ;;
 esac

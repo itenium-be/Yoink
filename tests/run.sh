@@ -221,6 +221,44 @@ bash "$YOINK" attach --force >/dev/null
 ok "attach --force takes it anyway" \
   '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/sid-1.json" 2>/dev/null)" == "888" ]]'
 
+# --- /yoink doctor ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *settings-probe*) printf 'status=ok\noff-behavior=bell\n' ;;
+  *capture*) echo "777 WindowsTerminal" ;;
+esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+rm -f "$DND"
+bash "$YOINK" attach >/dev/null
+ok "doctor passes on a healthy install" 'bash "$YOINK" doctor >/dev/null 2>&1'
+
+rm -f "$YOINK_DIR/sessions/sid-1.json"
+ok "doctor fails on a missing hwnd record" '! bash "$YOINK" doctor >/dev/null 2>&1'
+ok "doctor points at attach"              'out="$(bash "$YOINK" doctor 2>&1)"; grep -q "/yoink attach" <<<"$out"'
+
+bash "$YOINK" attach >/dev/null
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in *settings-probe*) printf 'status=error\nerror=bad json at line 3\n' ;; esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+ok "doctor fails on unparseable settings" '! bash "$YOINK" doctor >/dev/null 2>&1'
+ok "doctor surfaces the parse error"      'out="$(bash "$YOINK" doctor 2>&1)"; grep -q "bad json at line 3" <<<"$out"'
+
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *settings-probe*) printf 'status=ok\noff-behavior=bell\n' ;;
+  *capture*) echo "777 WindowsTerminal" ;;
+esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+bash "$YOINK" off >/dev/null
+ok "doctor reports active dnd" 'bash "$YOINK" doctor 2>&1 | grep -qi "muted"'
+bash "$YOINK" on >/dev/null
+
 # --- mascot outline step ---
 ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
 
