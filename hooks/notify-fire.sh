@@ -31,8 +31,30 @@ if [[ "$EVENT" == "done" ]]; then
   fi
 fi
 
+# DND (/yoink off). "GO" = not muted. Otherwise the card is always suppressed and only the
+# listed channels survive — intersected across every matching scope, so a blanket `off` is
+# never loosened by a per-project one. jq output is empty on a missing/corrupt file, which
+# is neither "GO" nor a channel list, so we fail open and notify.
+DND="$YOINK_DIR/dnd.json"
+ALLOW="GO"
+if [[ -f "$DND" ]]; then
+  OUT="$(jq -r --arg s "$SID" --arg p "$CWD" --argjson now "$(date +%s)" '
+    def alive: .until == 0 or .until > $now;
+    [ .all, .sessions[$s], .projects[$p] ] | map(select(. != null and alive))
+    | if length == 0 then "GO"
+      else ( map(.allow)
+             | reduce .[] as $a (["bell","sound"]; [ .[] | select(. as $c | $a | index($c)) ])
+             | join(",") | if . == "" then "NONE" else . end )
+      end' "$DND" 2>/dev/null)"
+  [[ -n "$OUT" ]] && ALLOW="$OUT"
+fi
+
 # Ring the bell on this session's own terminal tab (flashes the exact tab).
-{ printf '\a' > /dev/tty; } 2>/dev/null || true
+if [[ "$ALLOW" == "GO" || "$ALLOW" == *bell* ]]; then
+  { printf '\a' > /dev/tty; } 2>/dev/null || true
+fi
+
+[[ "$ALLOW" != "GO" && "$ALLOW" != *sound* ]] && exit 0
 
 HWND=0
 REC="$SESS_DIR/$SID.json"
@@ -42,14 +64,23 @@ REC="$SESS_DIR/$SID.json"
 
 PS_SCRIPT="${YOINK_PS_SHOW:-$(wslpath -w "$PLUGIN_ROOT/show-notification.ps1" 2>/dev/null)}"
 
+# -SettingsDir points the renderer at the user dir so its settings.json + sound overrides
+# win over the bundled defaults that ship inside the plugin.
+WSETTINGS="$(wslpath -w "$YOINK_DIR" 2>/dev/null)"
+
+# Muted but sound-allowed: play the themed wav, draw no card. No context needed — the
+# wav comes from the theme, not the body templates.
+if [[ "$ALLOW" != "GO" ]]; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" \
+    -Hwnd "$HWND" -Event "$EVENT" -SettingsDir "$WSETTINGS" -SoundOnly \
+    >>"$LOG" 2>&1 &
+  exit 0
+fi
+
 # Gather context tokens ({{message}}, {{branch}}, {{last_prompt}}, ...) for the body templates.
 CTX="$SESS_DIR/${SID:-nosid}.ctx.json"
 printf '%s' "$INPUT" | bash "$PLUGIN_ROOT/notify-context.sh" "$EVENT" > "$CTX" 2>/dev/null || : > "$CTX"
 WCTX="$(wslpath -w "$CTX" 2>/dev/null)"
-
-# -SettingsDir points the renderer at the user dir so its settings.json + sound overrides
-# win over the bundled defaults that ship inside the plugin.
-WSETTINGS="$(wslpath -w "$YOINK_DIR" 2>/dev/null)"
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS_SCRIPT" \
   -Hwnd "$HWND" -Folder "$FOLDER" -Event "$EVENT" -Context "$WCTX" -SettingsDir "$WSETTINGS" \

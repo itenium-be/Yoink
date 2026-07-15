@@ -125,6 +125,7 @@ ok "quote in cwd preserves the all mute" '[[ "$(jq -r ".all.until" "$DND")" -gt 
 ok "quote in cwd records the project"    '[[ -n "$(jq -r ".projects | keys[0] // empty" "$DND")" ]]'
 
 # --- fire passes stored hwnd + done status ---
+rm -f "$DND"   # clear the mute left by the /yoink off|on block above
 cat > "$TMP/bin/powershell.exe" <<'EOF'
 #!/usr/bin/env bash
 echo "$@" > "$YOINK_DIR/last_show.txt"
@@ -140,6 +141,58 @@ echo '{"session_id":"nope","cwd":"/x"}' | bash "$HOOKS/notify-fire.sh" needs-inp
 sleep 0.3
 ok "fire fallback hwnd 0" 'grep -q -- "-Hwnd 0" "$YOINK_DIR/last_show.txt"'
 ok "fire needs-input event" 'grep -q -- "-Event needs-input" "$YOINK_DIR/last_show.txt"'
+
+# --- DND gates notify-fire ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+echo "$@" > "$YOINK_DIR/last_show.txt"
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+FUTURE=$(( $(date +%s) + 3600 ))
+PAST=$(( $(date +%s) - 60 ))
+fire(){ rm -f "$YOINK_DIR/last_show.txt"; echo '{"session_id":"abc","cwd":"/home/x/proj"}' | bash "$HOOKS/notify-fire.sh" done; sleep 0.3; }
+card_shown(){ [[ -f "$YOINK_DIR/last_show.txt" ]] && ! grep -q -- "-SoundOnly" "$YOINK_DIR/last_show.txt"; }
+
+echo '{"all":{"until":0,"allow":[]}}' > "$DND"
+fire
+ok "dnd all suppresses the card" '! card_shown'
+
+echo "{\"sessions\":{\"abc\":{\"until\":$FUTURE,\"allow\":[]}}}" > "$DND"
+fire
+ok "dnd session suppresses the card" '! card_shown'
+
+echo '{"projects":{"/home/x/proj":{"until":0,"allow":[]}}}' > "$DND"
+fire
+ok "dnd project suppresses the card" '! card_shown'
+
+echo '{"sessions":{"other":{"until":0,"allow":[]}}}' > "$DND"
+fire
+ok "dnd on another session still notifies" 'card_shown'
+
+echo "{\"all\":{\"until\":$PAST,\"allow\":[]}}" > "$DND"
+fire
+ok "expired dnd still notifies" 'card_shown'
+
+echo '{"all":{"until":0,"allow":["sound"]}}' > "$DND"
+fire
+ok "allow sound calls the renderer sound-only" 'grep -q -- "-SoundOnly" "$YOINK_DIR/last_show.txt"'
+
+echo '{"all":{"until":0,"allow":["bell"]}}' > "$DND"
+fire
+ok "allow bell alone never calls the renderer" '[[ ! -f "$YOINK_DIR/last_show.txt" ]]'
+
+# most restrictive scope wins: a blanket [] is not loosened by a project-level ["sound"]
+echo '{"all":{"until":0,"allow":[]},"projects":{"/home/x/proj":{"until":0,"allow":["sound"]}}}' > "$DND"
+fire
+ok "allow is intersected across scopes" '[[ ! -f "$YOINK_DIR/last_show.txt" ]]'
+
+echo 'not json {{{' > "$DND"
+fire
+ok "unparseable dnd fails open" 'card_shown'
+
+rm -f "$DND"
+fire
+ok "no dnd file notifies" 'card_shown'
 
 # --- mascot outline step ---
 ok "mascot outline ring" 'python3 "$(dirname "$0")/normalize-outline.test.py" >/dev/null 2>&1'
