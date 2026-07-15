@@ -68,6 +68,54 @@ bash "$(dirname "$0")/../bin/capture-hwnd.sh" "forced" "/tmp/f" --force
 ok "capture-hwnd --force stores untrusted hwnd" '[[ "$(jq -r .hwnd "$YOINK_DIR/sessions/forced.json" 2>/dev/null)" == "444" ]]'
 ok "capture-hwnd --force stores cwd" '[[ "$(jq -r .cwd "$YOINK_DIR/sessions/forced.json" 2>/dev/null)" == "/tmp/f" ]]'
 
+# --- /yoink off | on ---
+cat > "$TMP/bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  *settings-probe*) printf 'status=ok\noff-behavior=bell\n' ;;
+  *capture*) echo "123456 WindowsTerminal" ;;
+esac
+EOF
+chmod +x "$TMP/bin/powershell.exe"
+YOINK="$(cd "$(dirname "$0")/.." && pwd)/bin/yoink.sh"
+DND="$YOINK_DIR/dnd.json"
+export CLAUDE_CODE_SESSION_ID="sid-1"
+
+rm -f "$DND"
+bash "$YOINK" off >/dev/null
+ok "off defaults to scope all"       '[[ "$(jq -r ".all.until" "$DND")" == "0" ]]'
+ok "off copies off-behavior default" '[[ "$(jq -rc ".all.allow" "$DND")" == "[\"bell\"]" ]]'
+
+rm -f "$DND"
+bash "$YOINK" off session 2h >/dev/null
+ok "off session keys on session id"  '[[ "$(jq -r ".sessions[\"sid-1\"].until" "$DND")" -gt "$(date +%s)" ]]'
+ok "off 2h expires in ~2h"           '[[ "$(jq -r ".sessions[\"sid-1\"].until" "$DND")" -le "$(( $(date +%s) + 7200 ))" ]]'
+
+rm -f "$DND"
+(cd /tmp && bash "$YOINK" off project --allow bell,sound >/dev/null)
+ok "off project keys on cwd"         '[[ "$(jq -rc ".projects[\"/tmp\"].allow" "$DND")" == "[\"bell\",\"sound\"]" ]]'
+
+rm -f "$DND"
+bash "$YOINK" off 30m >/dev/null
+ok "off takes a bare duration"       '[[ "$(jq -r ".all.until" "$DND")" -gt "$(date +%s)" ]]'
+
+# on with no scope clears everything that could be silencing you here
+rm -f "$DND"
+bash "$YOINK" off >/dev/null
+bash "$YOINK" off session >/dev/null
+bash "$YOINK" on >/dev/null
+ok "bare on clears all"              '[[ "$(jq -r ".all // \"gone\"" "$DND")" == "gone" ]]'
+ok "bare on clears this session"     '[[ "$(jq -r ".sessions[\"sid-1\"] // \"gone\"" "$DND")" == "gone" ]]'
+
+rm -f "$DND"
+bash "$YOINK" off >/dev/null
+bash "$YOINK" off session >/dev/null
+bash "$YOINK" on session >/dev/null
+ok "on session keeps all"            '[[ "$(jq -r ".all.until" "$DND")" == "0" ]]'
+
+ok "off rejects a bad duration"      '! bash "$YOINK" off 5x >/dev/null 2>&1'
+ok "off rejects a bad scope"         '! bash "$YOINK" off everywhere >/dev/null 2>&1'
+
 # --- fire passes stored hwnd + done status ---
 cat > "$TMP/bin/powershell.exe" <<'EOF'
 #!/usr/bin/env bash
