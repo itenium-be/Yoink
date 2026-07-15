@@ -11,10 +11,12 @@ if [[ -f "$S" ]]; then HAD_SETTINGS=1; mv "$S" "$BAK"; fi
 restore() { [[ "$HAD_SETTINGS" == "1" && -f "$BAK" ]] && mv "$BAK" "$S"; rm -f "$BAK"; }
 trap restore EXIT
 
-# -SoundOnly: play the wav, draw no card. The per-monitor pid marker is only written on
-# the card path, so an untouched screens/ dir is the proof.
+# -SoundOnly: play the wav, draw no card. Timing is the reliable observable: the card path
+# self-cleans its screens/*.pid marker when the dialog closes, so a marker count alone can't
+# fail. The sound path returns in ~1s; the card path enters ShowDialog (~5-6s+ headless, up
+# to the timeout on a real display), so a 4s bound turns "a card was built" into RC=124.
 MARKERS_BEFORE="$(ls "$ROOT/screens" 2>/dev/null | wc -l)"
-powershell.exe -NoProfile -ExecutionPolicy Bypass \
+timeout 4s powershell.exe -NoProfile -ExecutionPolicy Bypass \
   -File "$(wslpath -w "$ROOT/show-notification.ps1")" -Event done -Hwnd 0 -SoundOnly >/dev/null 2>&1
 RC=$?
 MARKERS_AFTER="$(ls "$ROOT/screens" 2>/dev/null | wc -l)"
